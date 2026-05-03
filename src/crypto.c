@@ -4,6 +4,10 @@
 
 #include "hc/crypto.h"
 
+static const uint8_t LEAF_TYPE = 0x00;
+static const uint8_t PARENT_TYPE = 0x01;
+static const uint8_t ROOT_TYPE = 0x02;
+
 static void
 encode_uint64 (uint8_t buf[8], uint64_t v) {
   buf[0] = (uint8_t) (v);
@@ -45,12 +49,11 @@ hc_crypto_verify (const uint8_t sig[HC_CRYPTO_SIGN_SIZE], const uint8_t *msg, si
 void
 hc_crypto_data (uint8_t out[HC_CRYPTO_HASH_SIZE], const uint8_t *data, size_t len) {
   crypto_generichash_state state;
-  uint8_t prefix = 0x00;
-  uint8_t len_buf[8];
-  encode_uint64(len_buf, (uint64_t) len);
+  uint8_t buf[9];
+  buf[0] = LEAF_TYPE;
+  encode_uint64(buf + 1, (uint64_t) len);
   crypto_generichash_init(&state, NULL, 0, HC_CRYPTO_HASH_SIZE);
-  crypto_generichash_update(&state, &prefix, 1);
-  crypto_generichash_update(&state, len_buf, 8);
+  crypto_generichash_update(&state, buf, 9);
   crypto_generichash_update(&state, data, len);
   crypto_generichash_final(&state, out, HC_CRYPTO_HASH_SIZE);
 }
@@ -60,12 +63,11 @@ hc_crypto_parent (uint8_t out[HC_CRYPTO_HASH_SIZE], const hc_crypto_node_t *a, c
   const hc_crypto_node_t *lo = a->index < b->index ? a : b;
   const hc_crypto_node_t *hi = a->index < b->index ? b : a;
   crypto_generichash_state state;
-  uint8_t prefix = 0x01;
-  uint8_t buf[8];
+  uint8_t buf[9];
+  buf[0] = PARENT_TYPE;
+  encode_uint64(buf + 1, lo->index);
   crypto_generichash_init(&state, NULL, 0, HC_CRYPTO_HASH_SIZE);
-  crypto_generichash_update(&state, &prefix, 1);
-  encode_uint64(buf, lo->index);
-  crypto_generichash_update(&state, buf, 8);
+  crypto_generichash_update(&state, buf, 9);
   crypto_generichash_update(&state, lo->hash, HC_CRYPTO_HASH_SIZE);
   encode_uint64(buf, lo->size);
   crypto_generichash_update(&state, buf, 8);
@@ -80,10 +82,9 @@ hc_crypto_parent (uint8_t out[HC_CRYPTO_HASH_SIZE], const hc_crypto_node_t *a, c
 void
 hc_crypto_tree (uint8_t out[HC_CRYPTO_HASH_SIZE], const hc_crypto_node_t *roots, size_t count) {
   crypto_generichash_state state;
-  uint8_t prefix = 0x02;
   uint8_t buf[8];
   crypto_generichash_init(&state, NULL, 0, HC_CRYPTO_HASH_SIZE);
-  crypto_generichash_update(&state, &prefix, 1);
+  crypto_generichash_update(&state, &ROOT_TYPE, 1);
   for (size_t i = 0; i < count; i++) {
     encode_uint64(buf, roots[i].index);
     crypto_generichash_update(&state, buf, 8);
