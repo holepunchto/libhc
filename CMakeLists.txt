@@ -9,6 +9,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
 
+fetch_package("github:holepunchto/libkv")
+
 bare_target(target)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -206,6 +208,7 @@ target_link_libraries(
   hc
   PUBLIC
     sodium
+    kv
 )
 
 add_library(hc_shared SHARED)
@@ -223,6 +226,7 @@ target_link_libraries(
     hc
   PRIVATE
     $<TARGET_OBJECTS:sodium>
+    $<TARGET_OBJECTS:kv>
 )
 
 add_library(hc_static STATIC)
@@ -240,6 +244,7 @@ target_link_libraries(
     hc
   PRIVATE
     $<TARGET_OBJECTS:sodium>
+    $<TARGET_OBJECTS:kv>
 )
 
 install(TARGETS hc_shared hc_static)
