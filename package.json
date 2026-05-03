@@ -12,6 +12,7 @@
   },
   "homepage": "https://github.com/holepunchto/libhc#readme",
   "devDependencies": {
-    "cmake-fetch": "^1.0.0"
+    "cmake-bare": "^1.6.1",
+    "cmake-fetch": "^1.4.3"
   }
 }

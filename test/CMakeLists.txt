@@ -1,4 +1,5 @@
 list(APPEND tests
+  crypto
 )
 
 foreach(test IN LISTS tests)
