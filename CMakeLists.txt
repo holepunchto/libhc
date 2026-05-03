@@ -11,6 +11,8 @@ fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
 
 fetch_package("github:holepunchto/libkv")
 
+fetch_package("github:holepunchto/liblexkey")
+
 bare_target(target)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -196,6 +198,7 @@ target_sources(
   PRIVATE
     src/crypto.c
     src/storage.c
+    src/encodings/keys.c
 )
 
 target_include_directories(
@@ -209,6 +212,7 @@ target_link_libraries(
   PUBLIC
     sodium
     kv
+    lexkey
 )
 
 add_library(hc_shared SHARED)
@@ -227,6 +231,8 @@ target_link_libraries(
   PRIVATE
     $<TARGET_OBJECTS:sodium>
     $<TARGET_OBJECTS:kv>
+    $<TARGET_OBJECTS:compact>
+    $<TARGET_OBJECTS:utf>
 )
 
 add_library(hc_static STATIC)
@@ -245,6 +251,8 @@ target_link_libraries(
   PRIVATE
     $<TARGET_OBJECTS:sodium>
     $<TARGET_OBJECTS:kv>
+    $<TARGET_OBJECTS:compact>
+    $<TARGET_OBJECTS:utf>
 )
 
 install(TARGETS hc_shared hc_static)
