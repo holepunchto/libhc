@@ -8,6 +8,8 @@ static const uint8_t LEAF_TYPE = 0x00;
 static const uint8_t PARENT_TYPE = 0x01;
 static const uint8_t ROOT_TYPE = 0x02;
 
+static const uint8_t DISCOVERY_KEY_NAMESPACE[] = "hypercore";
+
 static void
 encode_uint64 (uint8_t buf[8], uint64_t v) {
   buf[0] = (uint8_t) (v);
@@ -102,8 +104,7 @@ hc_crypto_hash (uint8_t out[HC_CRYPTO_HASH_SIZE], const uint8_t *data, size_t le
 
 void
 hc_crypto_discovery_key (uint8_t out[HC_CRYPTO_HASH_SIZE], const uint8_t key[HC_CRYPTO_KEY_SIZE]) {
-  static const uint8_t ns[] = "hypercore";
-  crypto_generichash(out, HC_CRYPTO_HASH_SIZE, ns, sizeof(ns) - 1, key, HC_CRYPTO_KEY_SIZE);
+  crypto_generichash(out, HC_CRYPTO_HASH_SIZE, DISCOVERY_KEY_NAMESPACE, sizeof(DISCOVERY_KEY_NAMESPACE) - 1, key, HC_CRYPTO_KEY_SIZE);
 }
 
 void
