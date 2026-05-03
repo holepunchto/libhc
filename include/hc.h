@@ -3,6 +3,7 @@
 
 #include "hc/crypto.h"
 #include "hc/merkle_tree.h"
+#include "hc/storage.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -189,8 +189,11 @@ target_sources(
   INTERFACE
     include/hc.h
     include/hc/crypto.h
+    include/hc/merkle_tree.h
+    include/hc/storage.h
   PRIVATE
     src/crypto.c
+    src/storage.c
 )
 
 target_include_directories(
