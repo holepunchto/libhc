@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "name": "libhc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/holepunchto/libhc.git"
+  },
+  "author": "Holepunch",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/holepunchto/libhc/issues"
+  },
+  "homepage": "https://github.com/holepunchto/libhc#readme",
+  "devDependencies": {
+    "cmake-fetch": "^1.0.0"
+  }
+}
