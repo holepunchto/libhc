@@ -5,6 +5,8 @@ find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 
 project(hc C)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
 
 bare_target(target)
