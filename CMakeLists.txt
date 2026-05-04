@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.25)
 find_package(cmake-bare REQUIRED PATHS node_modules/cmake-bare)
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 
-project(hc C)
+project(hc C ASM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
