@@ -30,7 +30,7 @@ typedef struct {
   hc_storage_core_write_op_type_t type;
   uint64_t index;
   union {
-    const hc_merkle_tree_node_t *tree_node;
+    hc_merkle_tree_node_t tree_node;
   } payload;
 } hc_storage_core_write_op_t;
 
@@ -78,7 +78,6 @@ hc_storage_core_write_flush (hc_storage_core_write_t *write);
 int
 hc_storage_core_read_get_tree_node (hc_storage_core_read_t *read, uint64_t index, hc_merkle_tree_node_t *node);
 
-// node must remain valid until hc_storage_core_write_flush is called.
 int
 hc_storage_core_write_put_tree_node (hc_storage_core_write_t *write, uint64_t index, const hc_merkle_tree_node_t *node);
 

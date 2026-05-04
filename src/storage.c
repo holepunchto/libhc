@@ -105,7 +105,7 @@ hc_storage_core_write_flush (hc_storage_core_write_t *write) {
 
     if (op->type == HC_STORAGE_CORE_WRITE_PUT_TREE_NODE) {
       // TODO: replace raw memcpy with proper tree-node value encoding.
-      kv_put(&write->storage->kv, key_buf, state.start, (const uint8_t *) op->payload.tree_node, sizeof(hc_merkle_tree_node_t));
+      kv_put(&write->storage->kv, key_buf, state.start, (const uint8_t *) &op->payload.tree_node, sizeof(hc_merkle_tree_node_t));
     } else { // HC_STORAGE_CORE_WRITE_DELETE_TREE_NODE
       kv_del(&write->storage->kv, key_buf, state.start);
     }
@@ -131,7 +131,7 @@ hc_storage_core_write_put_tree_node (hc_storage_core_write_t *write, uint64_t in
   if (write->len == write->capacity && grow_write_ops(write) < 0) return -1;
   write->ops[write->len].type = HC_STORAGE_CORE_WRITE_PUT_TREE_NODE;
   write->ops[write->len].index = index;
-  write->ops[write->len].payload.tree_node = node;
+  write->ops[write->len].payload.tree_node = *node;
   write->len++;
   return 0;
 }
