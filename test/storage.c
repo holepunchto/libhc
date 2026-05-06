@@ -13,13 +13,13 @@ main () {
   memset(node.hash, 0xab, sizeof(node.hash));
 
   hc_storage_core_write_t write;
-  assert(hc_storage_core_write(&storage, &write, -1) == 0);
+  assert(hc_storage_core_write(&storage, &write, 4) == 0);
   assert(hc_storage_core_write_put_tree_node(&write, 7, &node) == 0);
   assert(hc_storage_core_write_flush(&write) == 0);
 
   // Read it back, flush, verify.
   hc_storage_core_read_t read;
-  assert(hc_storage_core_read(&storage, &read, -1) == 0);
+  assert(hc_storage_core_read(&storage, &read, 4) == 0);
   hc_merkle_tree_node_t got = {0};
   assert(hc_storage_core_read_get_tree_node(&read, 7, &got) == 0);
   assert(hc_storage_core_read_flush(&read) == 0);
@@ -33,12 +33,12 @@ main () {
   memset(a.hash, 0x11, sizeof(a.hash));
   memset(b.hash, 0x22, sizeof(b.hash));
 
-  assert(hc_storage_core_write(&storage, &write, -1) == 0);
+  assert(hc_storage_core_write(&storage, &write, 4) == 0);
   assert(hc_storage_core_write_put_tree_node(&write, 100, &a) == 0);
   assert(hc_storage_core_write_put_tree_node(&write, 200, &b) == 0);
   assert(hc_storage_core_write_flush(&write) == 0);
 
-  assert(hc_storage_core_read(&storage, &read, -1) == 0);
+  assert(hc_storage_core_read(&storage, &read, 4) == 0);
   hc_merkle_tree_node_t got_a = {0};
   hc_merkle_tree_node_t got_b = {0};
   assert(hc_storage_core_read_get_tree_node(&read, 100, &got_a) == 0);
@@ -50,11 +50,11 @@ main () {
   assert(memcmp(got_b.hash, b.hash, sizeof(b.hash)) == 0);
 
   // Delete one, verify the other survives.
-  assert(hc_storage_core_write(&storage, &write, -1) == 0);
+  assert(hc_storage_core_write(&storage, &write, 4) == 0);
   assert(hc_storage_core_write_delete_tree_node(&write, 100) == 0);
   assert(hc_storage_core_write_flush(&write) == 0);
 
-  assert(hc_storage_core_read(&storage, &read, -1) == 0);
+  assert(hc_storage_core_read(&storage, &read, 4) == 0);
   hc_merkle_tree_node_t after_a = {0};
   hc_merkle_tree_node_t after_b = {0};
   assert(hc_storage_core_read_get_tree_node(&read, 100, &after_a) == 0);

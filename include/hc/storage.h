@@ -16,23 +16,8 @@ typedef struct hc_storage_core_s hc_storage_core_t;
 typedef struct hc_storage_core_read_s hc_storage_core_read_t;
 typedef struct hc_storage_core_write_s hc_storage_core_write_t;
 
-typedef struct {
-  uint64_t index;
-  hc_merkle_tree_node_t *out;
-} hc_storage_core_read_op_t;
-
-typedef enum {
-  HC_STORAGE_CORE_WRITE_PUT_TREE_NODE,
-  HC_STORAGE_CORE_WRITE_DELETE_TREE_NODE,
-} hc_storage_core_write_op_type_t;
-
-typedef struct {
-  hc_storage_core_write_op_type_t type;
-  uint64_t index;
-  union {
-    hc_merkle_tree_node_t tree_node;
-  } payload;
-} hc_storage_core_write_op_t;
+// Internal per-op state, opaque to callers.
+typedef struct hc_storage_core_read_op_s hc_storage_core_read_op_t;
 
 struct hc_storage_core_s {
   kv_t kv;
@@ -42,14 +27,16 @@ struct hc_storage_core_s {
 
 struct hc_storage_core_read_s {
   hc_storage_core_t *storage;
-  hc_storage_core_read_op_t *ops;
+  kv_read_batch_t batch;
+  hc_storage_core_read_op_t **ops;
   size_t len;
   size_t capacity;
 };
 
 struct hc_storage_core_write_s {
   hc_storage_core_t *storage;
-  hc_storage_core_write_op_t *ops;
+  kv_write_batch_t batch;
+  uint8_t **bufs; // per-op heap buffers we own; kv batch points into them
   size_t len;
   size_t capacity;
 };
@@ -60,15 +47,15 @@ hc_storage_core_init (hc_storage_core_t *storage, uint64_t core_ptr, uint64_t da
 void
 hc_storage_core_destroy (hc_storage_core_t *storage);
 
-// Pass suggested_size = -1 for the default initial capacity.
 int
-hc_storage_core_read (hc_storage_core_t *storage, hc_storage_core_read_t *read, int suggested_size);
+hc_storage_core_read (hc_storage_core_t *storage, hc_storage_core_read_t *read, size_t suggested_size);
 
 int
-hc_storage_core_write (hc_storage_core_t *storage, hc_storage_core_write_t *write, int suggested_size);
+hc_storage_core_write (hc_storage_core_t *storage, hc_storage_core_write_t *write, size_t suggested_size);
 
-// Commits all buffered ops. For reads, the result buffers passed to
-// hc_storage_core_read_get_tree_node are only valid after this returns.
+// Commits all queued ops and tears down the batch. For reads, the result
+// buffers passed to hc_storage_core_read_get_tree_node are only valid after
+// this returns.
 int
 hc_storage_core_read_flush (hc_storage_core_read_t *read);
 

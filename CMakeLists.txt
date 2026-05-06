@@ -199,6 +199,7 @@ target_sources(
     src/crypto.c
     src/storage.c
     src/encodings/keys.c
+    src/encodings/schema.c
 )
 
 target_include_directories(
