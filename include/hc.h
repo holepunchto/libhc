@@ -1,7 +1,9 @@
 #ifndef HC_H
 #define HC_H
 
+#include "hc/buffer.h"
 #include "hc/crypto.h"
+#include "hc/keys.h"
 #include "hc/merkle_tree.h"
 #include "hc/storage.h"
 
