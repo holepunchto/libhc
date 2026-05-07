@@ -6,18 +6,13 @@
 
 #include <kv.h>
 
-#include "merkle_tree.h"
+#include "buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct hc_storage_core_s hc_storage_core_t;
-typedef struct hc_storage_core_read_s hc_storage_core_read_t;
-typedef struct hc_storage_core_write_s hc_storage_core_write_t;
-
-// Internal per-op state, opaque to callers.
-typedef struct hc_storage_core_read_op_s hc_storage_core_read_op_t;
 
 struct hc_storage_core_s {
   kv_t kv;
@@ -25,51 +20,74 @@ struct hc_storage_core_s {
   uint64_t data_ptr;
 };
 
-struct hc_storage_core_read_s {
-  hc_storage_core_t *storage;
-  kv_read_batch_t batch;
-  hc_storage_core_read_op_t **ops;
-  size_t len;
-  size_t capacity;
-};
+static inline int
+hc_storage_core_init (hc_storage_core_t *storage, uint64_t core_ptr, uint64_t data_ptr) {
+  kv_init(&storage->kv);
+  storage->core_ptr = core_ptr;
+  storage->data_ptr = data_ptr;
+  return 0;
+}
 
-struct hc_storage_core_write_s {
-  hc_storage_core_t *storage;
-  kv_write_batch_t batch;
-  uint8_t **bufs; // per-op heap buffers we own; kv batch points into them
-  size_t len;
-  size_t capacity;
-};
+static inline void
+hc_storage_core_destroy (hc_storage_core_t *storage) {
+  kv_destroy(&storage->kv);
+}
 
-int
-hc_storage_core_init (hc_storage_core_t *storage, uint64_t core_ptr, uint64_t data_ptr);
+// Write batch: thin wrapper over kv_write_batch_t that takes hc_buf_t.
 
-void
-hc_storage_core_destroy (hc_storage_core_t *storage);
+typedef kv_write_batch_t hc_write_batch_t;
 
-int
-hc_storage_core_read (hc_storage_core_t *storage, hc_storage_core_read_t *read, size_t suggested_size);
+static inline void
+hc_write_batch_init (hc_write_batch_t *batch, kv_t *kv, size_t suggested_size) {
+  kv_write_batch_init(batch, kv, suggested_size);
+}
 
-int
-hc_storage_core_write (hc_storage_core_t *storage, hc_storage_core_write_t *write, size_t suggested_size);
+static inline int
+hc_write_batch_put (hc_write_batch_t *batch, hc_buf_t key, hc_buf_t value) {
+  return kv_write_batch_put(batch, key.buffer, key.len, value.buffer, value.len);
+}
 
-// Commits all queued ops and tears down the batch. For reads, the result
-// buffers passed to hc_storage_core_read_get_tree_node are only valid after
-// this returns.
-int
-hc_storage_core_read_flush (hc_storage_core_read_t *read);
+static inline int
+hc_write_batch_del (hc_write_batch_t *batch, hc_buf_t key) {
+  return kv_write_batch_del(batch, key.buffer, key.len);
+}
 
-int
-hc_storage_core_write_flush (hc_storage_core_write_t *write);
+static inline int
+hc_write_batch_flush (hc_write_batch_t *batch) {
+  return kv_write_batch_flush(batch);
+}
 
-int
-hc_storage_core_read_get_tree_node (hc_storage_core_read_t *read, uint64_t index, hc_merkle_tree_node_t *node);
+static inline void
+hc_write_batch_destroy (hc_write_batch_t *batch) {
+  kv_write_batch_destroy(batch);
+}
 
-int
-hc_storage_core_write_put_tree_node (hc_storage_core_write_t *write, uint64_t index, const hc_merkle_tree_node_t *node);
+// Read batch: thin wrapper over kv_read_batch_t that takes hc_buf_t for the
+// key and returns the value into a caller-provided hc_buf_t. The out struct
+// must remain valid until hc_read_batch_flush returns; after flush, an
+// unfound key leaves out->buffer == NULL.
 
-int
-hc_storage_core_write_delete_tree_node (hc_storage_core_write_t *write, uint64_t index);
+typedef kv_read_batch_t hc_read_batch_t;
+
+static inline void
+hc_read_batch_init (hc_read_batch_t *batch, kv_t *kv, size_t suggested_size) {
+  kv_read_batch_init(batch, kv, suggested_size);
+}
+
+static inline int
+hc_read_batch_get (hc_read_batch_t *batch, hc_buf_t key, hc_buf_t *out) {
+  return kv_read_batch_get(batch, key.buffer, key.len, &out->buffer, &out->len);
+}
+
+static inline int
+hc_read_batch_flush (hc_read_batch_t *batch) {
+  return kv_read_batch_flush(batch);
+}
+
+static inline void
+hc_read_batch_destroy (hc_read_batch_t *batch) {
+  kv_read_batch_destroy(batch);
+}
 
 #ifdef __cplusplus
 }

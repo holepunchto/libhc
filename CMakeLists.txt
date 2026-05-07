@@ -193,14 +193,16 @@ target_sources(
   INTERFACE
     include/hc.h
     include/hc/buffer.h
+    include/hc/core.h
     include/hc/crypto.h
     include/hc/keys.h
     include/hc/merkle_tree.h
+    include/hc/schema.h
     include/hc/storage.h
   PRIVATE
+    src/core.c
     src/crypto.c
     src/keys.c
-    src/storage.c
     src/encodings/keys.c
     src/encodings/schema.c
 )

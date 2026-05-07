@@ -2,7 +2,7 @@
 
 #include <compact.h>
 
-#include "schema.h"
+#include "hc/schema.h"
 
 int
 hc_schema_preencode_tree_node (compact_state_t *state, const hc_merkle_tree_node_t *node) {
