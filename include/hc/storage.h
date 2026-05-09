@@ -35,13 +35,35 @@ hc_storage_core_destroy (hc_storage_core_t *storage) {
   kv_destroy(&storage->kv);
 }
 
-// Holds the typed payloads for a write batch. Keys and values are
-// pre-allocated here so put-style ops can fill in slots without
-// per-op malloc.
+// Stack-allocatable key+value pair for a tree-node kv record.
 typedef struct {
-  hc_small_key_array_t tree_keys;
-  hc__tree_node_buffer_array_t tree_values;
+  hc_small_key_t key;
+  hc__tree_node_buffer_t value;
+} hc__tree_node_kv_t;
+
+typedef struct {
+  hc__tree_node_kv_t *buffers;
+  size_t length;
+  size_t capacity;
+} hc__tree_node_kv_array_t;
+
+// Pre-allocated payload slots for a tree-node write batch.
+typedef struct {
+  hc__tree_node_kv_array_t tree_nodes;
 } hc_storage_write_batch_t;
+
+static inline int
+hc_storage_write_batch_init (hc_storage_write_batch_t *batch, size_t initial_tree_node_capacity) {
+  batch->tree_nodes.buffers = NULL;
+  batch->tree_nodes.length = 0;
+  batch->tree_nodes.capacity = 0;
+  return HC_ARRAY_GROW(batch->tree_nodes, initial_tree_node_capacity);
+}
+
+static inline void
+hc_storage_write_batch_destroy (hc_storage_write_batch_t *batch) {
+  free(batch->tree_nodes.buffers);
+}
 
 // Write batch: thin wrapper over kv_write_batch_t that takes hc_buf_t.
 

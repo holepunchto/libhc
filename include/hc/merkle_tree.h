@@ -6,7 +6,6 @@
 
 #include "buffer.h"
 #include "crypto.h"
-#include "keys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,12 +38,6 @@ typedef struct {
   size_t length;
   size_t capacity;
 } hc__tree_node_buffer_array_t;
-
-// Stack-allocatable key+value pair for a tree-node kv record.
-typedef struct {
-  hc_small_key_t key;
-  hc__tree_node_buffer_t value;
-} hc__tree_node_kv_t;
 
 // Forward decl to avoid an include cycle with hc/core.h.
 struct hc_core_s;
