@@ -13,6 +13,8 @@ fetch_package("github:holepunchto/libkv")
 
 fetch_package("github:holepunchto/liblexkey")
 
+fetch_package("github:holepunchto/libflattree")
+
 bare_target(target)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -203,6 +205,7 @@ target_sources(
     src/core.c
     src/crypto.c
     src/keys.c
+    src/merkle_tree.c
     src/encodings/keys.c
     src/encodings/schema.c
 )
@@ -219,6 +222,7 @@ target_link_libraries(
     sodium
     kv
     lexkey
+    flattree
 )
 
 add_library(hc_shared SHARED)

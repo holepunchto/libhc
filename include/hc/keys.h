@@ -38,6 +38,12 @@ typedef struct {
   uint8_t data[32];
 } hc_small_key_t;
 
+typedef struct {
+  hc_small_key_t *buffers;
+  size_t length;
+  size_t capacity;
+} hc_small_key_array_t;
+
 // All encoders use lexkey UINTs (order-preserving big-endian) so encoded
 // keys sort lexicographically in the same order as the logical (tl, ptr,
 // subtype, index) tuple.

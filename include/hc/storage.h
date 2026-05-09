@@ -7,6 +7,8 @@
 #include <kv.h>
 
 #include "buffer.h"
+#include "keys.h"
+#include "merkle_tree.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +34,14 @@ static inline void
 hc_storage_core_destroy (hc_storage_core_t *storage) {
   kv_destroy(&storage->kv);
 }
+
+// Holds the typed payloads for a write batch. Keys and values are
+// pre-allocated here so put-style ops can fill in slots without
+// per-op malloc.
+typedef struct {
+  hc_small_key_array_t tree_keys;
+  hc__tree_node_buffer_array_t tree_values;
+} hc_storage_write_batch_t;
 
 // Write batch: thin wrapper over kv_write_batch_t that takes hc_buf_t.
 
