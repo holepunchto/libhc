@@ -1,12 +1,9 @@
-#include <stdlib.h>
-
 #include "hc/core.h"
 
 int
 hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr) {
   hc__db_core_init(&core->db, core_ptr, data_ptr);
-  core->roots = NULL;
-  core->roots_len = 0;
+  hc__array_init(&core->roots);
   core->length = 0;
   core->byte_length = 0;
   return 0;
@@ -14,7 +11,7 @@ hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr) {
 
 void
 hc_core_destroy (hc_core_t *core) {
-  free(core->roots);
+  hc__array_destroy(&core->roots);
   hc__db_core_destroy(&core->db);
 }
 
@@ -28,8 +25,7 @@ hc_core_checkout (hc_core_t *core, uint64_t length) {
 int
 hc_core_upgrade_init (hc_core_upgrade_t *upgrade, hc_core_t *core) {
   upgrade->core = core;
-  upgrade->roots = NULL;
-  upgrade->roots_len = 0;
+  hc__array_init(&upgrade->roots);
   upgrade->length = 0;
   upgrade->byte_length = 0;
   return 0;
@@ -37,5 +33,5 @@ hc_core_upgrade_init (hc_core_upgrade_t *upgrade, hc_core_t *core) {
 
 void
 hc_core_upgrade_destroy (hc_core_upgrade_t *upgrade) {
-  free(upgrade->roots);
+  hc__array_destroy(&upgrade->roots);
 }

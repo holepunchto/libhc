@@ -15,8 +15,7 @@ typedef struct hc_core_s hc_core_t;
 
 struct hc_core_s {
   hc__db_core_t db;
-  hc_merkle_tree_node_t *roots;
-  size_t roots_len;
+  hc_merkle_tree_node_array_t roots;
   uint64_t length;
   uint64_t byte_length;
 };
@@ -36,8 +35,7 @@ typedef struct hc_core_upgrade_s hc_core_upgrade_t;
 
 struct hc_core_upgrade_s {
   hc_core_t *core;
-  hc_merkle_tree_node_t *roots;
-  size_t roots_len;
+  hc_merkle_tree_node_array_t roots;
   uint64_t length;
   uint64_t byte_length;
 };

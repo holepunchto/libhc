@@ -19,6 +19,23 @@ typedef struct {
 //   HC__ARRAY(my_type_t) items;
 #define HC__ARRAY(T) struct { T *buffers; size_t length; size_t capacity; }
 
+static inline void
+hc__array_init (void *array) {
+  hc__array_t *h = array;
+  h->buffers = NULL;
+  h->length = 0;
+  h->capacity = 0;
+}
+
+static inline void
+hc__array_destroy (void *array) {
+  hc__array_t *h = array;
+  free(h->buffers);
+  h->buffers = NULL;
+  h->length = 0;
+  h->capacity = 0;
+}
+
 static inline int
 hc__array_grow_ (void *array, size_t elem_size, size_t min_capacity) {
   hc__array_t *h = array;

@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "array.h"
 #include "buffer.h"
 #include "crypto.h"
 
@@ -16,6 +17,8 @@ typedef struct {
   uint64_t size;
   uint8_t hash[HC_CRYPTO_HASH_SIZE];
 } hc_merkle_tree_node_t;
+
+typedef HC__ARRAY(hc_merkle_tree_node_t) hc_merkle_tree_node_array_t;
 
 // A merkle tree over a uint64-indexed leaf space has at most 64 peaks (one
 // per bit position).

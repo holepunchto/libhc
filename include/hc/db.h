@@ -62,15 +62,9 @@ struct hc__db_core_write_s {
 static inline void
 hc__db_core_write_init (hc__db_core_write_t *write, hc__db_core_t *db) {
   write->db = db;
-  write->tree_nodes.buffers = NULL;
-  write->tree_nodes.length = 0;
-  write->tree_nodes.capacity = 0;
-  write->blocks.buffers = NULL;
-  write->blocks.length = 0;
-  write->blocks.capacity = 0;
-  write->deletes.buffers = NULL;
-  write->deletes.length = 0;
-  write->deletes.capacity = 0;
+  hc__array_init(&write->tree_nodes);
+  hc__array_init(&write->blocks);
+  hc__array_init(&write->deletes);
 }
 
 static inline int
@@ -90,9 +84,9 @@ hc__db_core_write_ensure_deletes (hc__db_core_write_t *write, size_t capacity) {
 
 static inline void
 hc__db_core_write_destroy (hc__db_core_write_t *write) {
-  free(write->tree_nodes.buffers);
-  free(write->blocks.buffers);
-  free(write->deletes.buffers);
+  hc__array_destroy(&write->tree_nodes);
+  hc__array_destroy(&write->blocks);
+  hc__array_destroy(&write->deletes);
 }
 
 static inline int
@@ -192,9 +186,7 @@ typedef struct {
 static inline void
 hc__db_core_read_init (hc__db_core_read_t *read, hc__db_core_t *db) {
   read->db = db;
-  read->small_reads.buffers = NULL;
-  read->small_reads.length = 0;
-  read->small_reads.capacity = 0;
+  hc__array_init(&read->small_reads);
 }
 
 static inline int
@@ -209,7 +201,7 @@ hc__db_core_read_ensure_blocks (hc__db_core_read_t *read, size_t capacity) {
 
 static inline void
 hc__db_core_read_destroy (hc__db_core_read_t *read) {
-  free(read->small_reads.buffers);
+  hc__array_destroy(&read->small_reads);
 }
 
 static inline int
