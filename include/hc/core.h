@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "db.h"
 #include "merkle_tree.h"
-#include "storage.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 typedef struct hc_core_s hc_core_t;
 
 struct hc_core_s {
-  hc_storage_core_t storage;
+  hc__db_core_t db;
   hc_merkle_tree_node_t *roots;
   size_t roots_len;
   uint64_t length;
@@ -31,6 +31,22 @@ hc_core_destroy (hc_core_t *core);
 // storage and recomputes byte_length. Stubbed for now.
 int
 hc_core_checkout (hc_core_t *core, uint64_t length);
+
+typedef struct hc_core_upgrade_s hc_core_upgrade_t;
+
+struct hc_core_upgrade_s {
+  hc_core_t *core;
+  hc_merkle_tree_node_t *roots;
+  size_t roots_len;
+  uint64_t length;
+  uint64_t byte_length;
+};
+
+int
+hc_core_upgrade_init (hc_core_upgrade_t *upgrade, hc_core_t *core);
+
+void
+hc_core_upgrade_destroy (hc_core_upgrade_t *upgrade);
 
 #ifdef __cplusplus
 }
