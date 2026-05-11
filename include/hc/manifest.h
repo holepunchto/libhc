@@ -46,6 +46,11 @@ typedef struct {
   hc_buf_t user_data;
 } hc_manifest_t;
 
+// Hash a manifest for identity/signing purposes. Binary-compatible with the JS
+// hypercore manifestHash() function.
+int
+hc_manifest_hash (hc_hash_t out, const hc_manifest_t *manifest);
+
 #ifdef __cplusplus
 }
 #endif

@@ -206,6 +206,7 @@ target_sources(
   PRIVATE
     src/core.c
     src/crypto.c
+    src/manifest.c
     src/keys.c
     src/merkle_tree.c
     src/encodings/keys.c
