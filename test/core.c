@@ -41,9 +41,13 @@ main () {
   uint64_t expected[64];
   int nroots = flat_tree_full_roots(N * 2, expected);
   assert((size_t) nroots == core.roots.length);
+
+  uint64_t roots_byte_length = 0;
   for (int i = 0; i < nroots; i++) {
     assert(core.roots.buffers[i].index == expected[i]);
+    roots_byte_length += core.roots.buffers[i].size;
   }
+  assert(roots_byte_length == core.byte_length);
 
   hc_core_destroy(&core);
   return 0;
