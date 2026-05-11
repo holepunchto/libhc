@@ -1,4 +1,5 @@
 list(APPEND tests
+  core
   crypto
   db
 )

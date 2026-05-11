@@ -46,6 +46,10 @@ hc_core_upgrade_init (hc_core_upgrade_t *upgrade, hc_core_t *core);
 void
 hc_core_upgrade_destroy (hc_core_upgrade_t *upgrade);
 
+// Move upgrade state onto core and reset upgrade.
+void
+hc_core_commit (hc_core_upgrade_t *upgrade);
+
 #ifdef __cplusplus
 }
 #endif

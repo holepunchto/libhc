@@ -35,3 +35,16 @@ void
 hc_core_upgrade_destroy (hc_core_upgrade_t *upgrade) {
   hc__array_destroy(&upgrade->roots);
 }
+
+void
+hc_core_commit (hc_core_upgrade_t *upgrade) {
+  hc_core_t *core = upgrade->core;
+  hc__array_destroy(&core->roots);
+  core->roots = upgrade->roots;
+  core->length = upgrade->length;
+  core->byte_length = upgrade->byte_length;
+
+  hc__array_init(&upgrade->roots);
+  upgrade->length = 0;
+  upgrade->byte_length = 0;
+}
