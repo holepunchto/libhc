@@ -2,6 +2,7 @@ list(APPEND tests
   core
   crypto
   db
+  manifest
 )
 
 foreach(test IN LISTS tests)

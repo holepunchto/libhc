@@ -28,6 +28,8 @@ typedef struct {
 
 typedef HC__ARRAY(hc_signer_t) hc_signer_array_t;
 
+typedef HC__ARRAY(hc_hash_t) hc_hash_array_t;
+
 typedef struct {
   hc_hash_t hash;
   uint64_t length;
@@ -40,7 +42,7 @@ typedef struct {
   uint32_t quorum;
   hc_signer_array_t signers;
   hc_prologue_t *prologue;
-  HC__ARRAY(hc_hash_t) linked;
+  hc_hash_array_t linked;
   hc_buf_t user_data;
 } hc_manifest_t;
 
