@@ -72,7 +72,7 @@ main () {
   assert(got.linked.length == 0);
   assert(got.user_data.buffer == NULL);
 
-  free(got.signers.buffers);
+  hc_manifest_destroy(&got);
 
   // Verify manifest hash matches JS manifestHash() output.
   static const uint8_t expected_hash[32] = {

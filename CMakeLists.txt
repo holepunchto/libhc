@@ -199,6 +199,7 @@ target_sources(
     include/hc/core.h
     include/hc/crypto.h
     include/hc/db.h
+    include/hc/head.h
     include/hc/keys.h
     include/hc/manifest.h
     include/hc/merkle_tree.h

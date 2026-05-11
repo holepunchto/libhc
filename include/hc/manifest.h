@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "array.h"
 #include "buffer.h"
@@ -35,6 +36,8 @@ typedef struct {
   uint64_t length;
 } hc_prologue_t;
 
+// All pointer fields are caller-owned after decode: free signers.buffers,
+// prologue, linked.buffers, and user_data.buffer when done.
 typedef struct {
   uint32_t version;
   hc_hash_func_t hash;
@@ -45,6 +48,17 @@ typedef struct {
   hc_hash_array_t linked;
   hc_buf_t user_data;
 } hc_manifest_t;
+
+static inline void
+hc_manifest_destroy (hc_manifest_t *manifest) {
+  hc__array_destroy(&manifest->signers);
+  free(manifest->prologue);
+  manifest->prologue = NULL;
+  hc__array_destroy(&manifest->linked);
+  free(manifest->user_data.buffer);
+  manifest->user_data.buffer = NULL;
+  manifest->user_data.len = 0;
+}
 
 // Hash a manifest for identity/signing purposes. Binary-compatible with the JS
 // hypercore manifestHash() function.

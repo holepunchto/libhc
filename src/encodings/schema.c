@@ -35,6 +35,33 @@ hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node) {
   return compact_decode_fixed32(state, node->hash);
 }
 
+int
+hc_head_preencode (compact_state_t *state, const hc_head_t *head) {
+  compact_preencode_uint(state, head->fork);
+  compact_preencode_uint(state, head->length);
+  compact_preencode_fixed32(state, head->root_hash);
+  return compact_preencode_uint8array(state, head->signature.buffer, head->signature.len);
+}
+
+int
+hc_head_encode (compact_state_t *state, const hc_head_t *head) {
+  compact_encode_uint(state, head->fork);
+  compact_encode_uint(state, head->length);
+  compact_encode_fixed32(state, head->root_hash);
+  return compact_encode_uint8array(state, head->signature.buffer, head->signature.len);
+}
+
+int
+hc_head_decode (compact_state_t *state, hc_head_t *head) {
+  uintmax_t fork, length;
+  if (compact_decode_uint(state, &fork) < 0) return -1;
+  if (compact_decode_uint(state, &length) < 0) return -1;
+  head->fork = (uint64_t) fork;
+  head->length = (uint64_t) length;
+  if (compact_decode_fixed32(state, head->root_hash) < 0) return -1;
+  return compact_decode_uint8array(state, &head->signature.buffer, &head->signature.len);
+}
+
 static int
 preencode_signer (compact_state_t *state, const hc_signer_t *s) {
   compact_preencode_uint(state, (uintmax_t) s->signature);
