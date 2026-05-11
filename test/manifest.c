@@ -5,7 +5,6 @@
 
 #include <compact.h>
 
-#include "hc/manifest.h"
 #include "hc/schema.h"
 
 // Expected bytes produced by the JS hypercore messages.manifest codec for this
@@ -46,20 +45,20 @@ main () {
 
   // Preencode to determine size.
   compact_state_t state = {0, 0, NULL};
-  assert(hc_schema_preencode_manifest(&state, &m) == 0);
+  assert(hc_manifest_preencode(&state, &m) == 0);
   assert(state.end == sizeof(expected));
 
   // Encode into a buffer.
   uint8_t buf[sizeof(expected)];
   state = (compact_state_t){0, sizeof(buf), buf};
-  assert(hc_schema_encode_manifest(&state, &m) == 0);
+  assert(hc_manifest_encode(&state, &m) == 0);
   assert(state.start == sizeof(expected));
   assert(memcmp(buf, expected, sizeof(expected)) == 0);
 
   // Decode back and check fields.
   hc_manifest_t got = {0};
   state = (compact_state_t){0, sizeof(expected), (uint8_t *) expected};
-  assert(hc_schema_decode_manifest(&state, &got) == 0);
+  assert(hc_manifest_decode(&state, &got) == 0);
 
   assert(got.version == 1);
   assert(got.hash == HC_HASH_FUNC_BLAKE2B);

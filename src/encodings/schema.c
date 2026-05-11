@@ -1,5 +1,5 @@
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <compact.h>
 
@@ -9,6 +9,31 @@
 #define HC_MANIFEST_PROLOGUE  0x02
 #define HC_MANIFEST_LINKED    0x04
 #define HC_MANIFEST_USER_DATA 0x08
+
+int
+hc_tree_node_preencode (compact_state_t *state, const hc_merkle_tree_node_t *node) {
+  compact_preencode_uint(state, node->index);
+  compact_preencode_uint(state, node->size);
+  return compact_preencode_fixed32(state, node->hash);
+}
+
+int
+hc_tree_node_encode (compact_state_t *state, const hc_merkle_tree_node_t *node) {
+  compact_encode_uint(state, node->index);
+  compact_encode_uint(state, node->size);
+  return compact_encode_fixed32(state, node->hash);
+}
+
+int
+hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node) {
+  uintmax_t index;
+  uintmax_t size;
+  compact_decode_uint(state, &index);
+  compact_decode_uint(state, &size);
+  node->index = (uint64_t) index;
+  node->size = (uint64_t) size;
+  return compact_decode_fixed32(state, node->hash);
+}
 
 static int
 preencode_signer (compact_state_t *state, const hc_signer_t *s) {
@@ -138,7 +163,7 @@ decode_v0 (compact_state_t *state, hc_manifest_t *m, uintmax_t hash_func) {
 }
 
 int
-hc_schema_preencode_manifest (compact_state_t *state, const hc_manifest_t *m) {
+hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *m) {
   compact_preencode_uint(state, (uintmax_t) m->version);
 
   if (m->version == 0) return -1; // encode v0 not supported
@@ -167,7 +192,7 @@ hc_schema_preencode_manifest (compact_state_t *state, const hc_manifest_t *m) {
 }
 
 int
-hc_schema_encode_manifest (compact_state_t *state, const hc_manifest_t *m) {
+hc_manifest_encode (compact_state_t *state, const hc_manifest_t *m) {
   compact_encode_uint(state, (uintmax_t) m->version);
 
   if (m->version == 0) return -1; // encode v0 not supported
@@ -196,7 +221,7 @@ hc_schema_encode_manifest (compact_state_t *state, const hc_manifest_t *m) {
 }
 
 int
-hc_schema_decode_manifest (compact_state_t *state, hc_manifest_t *m) {
+hc_manifest_decode (compact_state_t *state, hc_manifest_t *m) {
   uintmax_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;
 

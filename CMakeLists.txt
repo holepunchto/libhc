@@ -210,8 +210,7 @@ target_sources(
     src/keys.c
     src/merkle_tree.c
     src/encodings/keys.c
-    src/encodings/manifest.c
-    src/encodings/tree_node.c
+    src/encodings/schema.c
 )
 
 target_include_directories(

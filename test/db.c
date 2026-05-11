@@ -6,12 +6,12 @@
 
 #include "hc/db.h"
 #include "hc/keys.h"
-#include "hc/schema.h"
+
 
 static void
 decode_tree_node (hc_buf_t value, hc_merkle_tree_node_t *out) {
   compact_state_t s = {0, value.len, value.buffer};
-  hc_schema_decode_tree_node(&s, out);
+  hc_tree_node_decode(&s, out);
 }
 
 int

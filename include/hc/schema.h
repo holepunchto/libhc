@@ -10,22 +10,19 @@
 extern "C" {
 #endif
 
-// Compact encoders for the value side of every kv record. Same two-pass
-// preencode/encode/decode style as libcompact.
+int
+hc_tree_node_preencode (compact_state_t *state, const hc_merkle_tree_node_t *node);
+int
+hc_tree_node_encode (compact_state_t *state, const hc_merkle_tree_node_t *node);
+int
+hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node);
 
 int
-hc_schema_preencode_tree_node (compact_state_t *state, const hc_merkle_tree_node_t *node);
+hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *manifest);
 int
-hc_schema_encode_tree_node (compact_state_t *state, const hc_merkle_tree_node_t *node);
+hc_manifest_encode (compact_state_t *state, const hc_manifest_t *manifest);
 int
-hc_schema_decode_tree_node (compact_state_t *state, hc_merkle_tree_node_t *node);
-
-int
-hc_schema_preencode_manifest (compact_state_t *state, const hc_manifest_t *manifest);
-int
-hc_schema_encode_manifest (compact_state_t *state, const hc_manifest_t *manifest);
-int
-hc_schema_decode_manifest (compact_state_t *state, hc_manifest_t *manifest);
+hc_manifest_decode (compact_state_t *state, hc_manifest_t *manifest);
 
 #ifdef __cplusplus
 }

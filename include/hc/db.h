@@ -131,7 +131,7 @@ hc__db_core_write_tree_node (hc__db_core_write_t *write, const hc_merkle_tree_no
   hc_key_core_tree(&kv->key, write->db->data_ptr, node->index);
 
   compact_state_t state = {0, sizeof(kv->value_data), kv->value_data};
-  hc_schema_encode_tree_node(&state, node);
+  hc_tree_node_encode(&state, node);
   kv->value.buffer = kv->value_data;
   kv->value.len = state.start;
 
@@ -226,7 +226,7 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
     if (e->value.buffer == NULL) continue;
     if (e->type == HC__DB_READ_TREE_NODE) {
       compact_state_t state = {0, e->value.len, e->value.buffer};
-      hc_schema_decode_tree_node(&state, (hc_merkle_tree_node_t *) e->result);
+      hc_tree_node_decode(&state, (hc_merkle_tree_node_t *) e->result);
       free(e->value.buffer);
     } else if (e->type == HC__DB_READ_BLOCK) {
       *(hc_buf_t *) e->result = e->value;

@@ -3,7 +3,6 @@
 #include <compact.h>
 #include <sodium.h>
 
-#include "hc/manifest.h"
 #include "hc/schema.h"
 
 // MANIFEST_CAP = BLAKE2b(BLAKE2b("hypercore") || 0x03)
@@ -19,13 +18,13 @@ manifest_cap (hc_hash_t out) {
 int
 hc_manifest_hash (hc_hash_t out, const hc_manifest_t *manifest) {
   compact_state_t state = {0, 0, NULL};
-  if (hc_schema_preencode_manifest(&state, manifest) < 0) return -1;
+  if (hc_manifest_preencode(&state, manifest) < 0) return -1;
 
   uint8_t *buf = malloc(state.end);
   if (buf == NULL) return -1;
 
   state = (compact_state_t){0, state.end, buf};
-  if (hc_schema_encode_manifest(&state, manifest) < 0) {
+  if (hc_manifest_encode(&state, manifest) < 0) {
     free(buf);
     return -1;
   }
