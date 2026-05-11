@@ -1,8 +1,13 @@
+#include <string.h>
+
 #include "hc/core.h"
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr) {
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_hash_t key, const hc_hash_t discovery_key) {
   hc__db_core_init(&core->db, core_ptr, data_ptr);
+  memcpy(core->key, key, sizeof(hc_hash_t));
+  memcpy(core->discovery_key, discovery_key, sizeof(hc_hash_t));
+  core->manifest = NULL;
   hc__array_init(&core->roots);
   core->length = 0;
   core->byte_length = 0;

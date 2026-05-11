@@ -12,7 +12,7 @@
 int
 main () {
   hc_core_t core;
-  assert(hc_core_init(&core, 0, 0) == 0);
+  assert(hc_core_init(&core, 0, 0, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
 
   uint8_t block_data[64];
   memset(block_data, 0xcd, sizeof(block_data));
