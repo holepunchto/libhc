@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <string.h>
 
 #include "hc/core.h"
@@ -16,6 +17,11 @@ hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_ha
 
 void
 hc_core_destroy (hc_core_t *core) {
+  if (core->manifest) {
+    hc_manifest_destroy(core->manifest);
+    free(core->manifest);
+    core->manifest = NULL;
+  }
   hc__array_destroy(&core->roots);
   hc__db_core_destroy(&core->db);
 }
