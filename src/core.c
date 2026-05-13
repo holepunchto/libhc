@@ -2,6 +2,8 @@
 #include <string.h>
 
 #include "hc/core.h"
+#include "hc/db.h"
+#include "hc/merkle_tree.h"
 
 int
 hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_hash_t key, const hc_hash_t discovery_key) {
@@ -24,6 +26,37 @@ hc_core_destroy (hc_core_t *core) {
   }
   hc__array_destroy(&core->roots);
   hc__db_core_destroy(&core->db);
+}
+
+static int
+hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, const hc_buf_t *buffers, size_t count) {
+  int rc;
+
+  if ((rc = hc_merkle_tree_append(upgrade, write, buffers, count)) < 0) return rc;
+  if ((rc = hc__db_core_write_ensure_blocks(write, count)) < 0) return rc;
+
+  for (size_t i = 0; i < count; i++) {
+    if ((rc = hc__db_core_write_block(write, upgrade->core->length + i, buffers[i])) < 0) return rc;
+  }
+
+  return hc__db_core_write_flush(write);
+}
+
+int
+hc_core_append (hc_core_t *core, const hc_buf_t *buffers, size_t count) {
+  hc_core_upgrade_t upgrade;
+  hc__db_core_write_t write;
+
+  hc_core_upgrade_init(&upgrade, core);
+  hc__db_core_write_init(&write, &core->db);
+
+  int rc = hc_core_append_work(&upgrade, &write, buffers, count);
+
+  if (rc == 0) hc_core_commit(&upgrade);
+
+  hc__db_core_write_destroy(&write);
+  hc_core_upgrade_destroy(&upgrade);
+  return rc;
 }
 
 int

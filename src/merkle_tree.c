@@ -26,7 +26,6 @@ hc_merkle_tree_append (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, c
   }
 
   if (hc__db_core_write_ensure_tree_nodes(write, 2 * count) < 0) return -1;
-  if (hc__db_core_write_ensure_blocks(write, count) < 0) return -1;
 
   for (size_t i = 0; i < count; i++) {
     if (upgrade->roots.length >= HC_MERKLE_TREE_MAX_ROOTS) return -1;
@@ -45,7 +44,6 @@ hc_merkle_tree_append (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, c
 
     upgrade->roots.buffers[upgrade->roots.length++] = leaf;
     if (hc__db_core_write_tree_node(write, &leaf) < 0) return -1;
-    if (hc__db_core_write_block(write, upgrade->length - 1, buffers[i]) < 0) return -1;
 
     while (upgrade->roots.length > 1) {
       hc_merkle_tree_node_t *a = &upgrade->roots.buffers[upgrade->roots.length - 1];

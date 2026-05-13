@@ -4,8 +4,6 @@
 #include <time.h>
 
 #include "hc/core.h"
-#include "hc/db.h"
-#include "hc/merkle_tree.h"
 
 #define N 100000
 
@@ -29,19 +27,7 @@ main () {
   uint64_t t0 = now_ns();
 
   for (size_t i = 0; i < N; i++) {
-    hc_core_upgrade_t upgrade;
-    hc__db_core_write_t write;
-
-    hc_core_upgrade_init(&upgrade, &core);
-    hc__db_core_write_init(&write, &core.db);
-
-    assert(hc_merkle_tree_append(&upgrade, &write, &block, 1) == 0);
-    assert(hc__db_core_write_flush(&write) == 0);
-
-    hc_core_commit(&upgrade);
-
-    hc__db_core_write_destroy(&write);
-    hc_core_upgrade_destroy(&upgrade);
+    assert(hc_core_append(&core, &block, 1) == 0);
   }
 
   uint64_t elapsed_ns = now_ns() - t0;

@@ -31,6 +31,9 @@ hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_ha
 void
 hc_core_destroy (hc_core_t *core);
 
+int
+hc_core_append (hc_core_t *core, const hc_buf_t *buffers, size_t count);
+
 // Roll the in-memory state to the given length. Loads the root nodes from
 // storage and recomputes byte_length. Stubbed for now.
 int
