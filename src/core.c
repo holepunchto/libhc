@@ -30,13 +30,17 @@ hc_core_destroy (hc_core_t *core) {
 
 static int
 hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, const hc_buf_t *buffers, size_t count) {
-  int rc;
+  int err = 0;
 
-  if ((rc = hc_merkle_tree_append(upgrade, write, buffers, count)) < 0) return rc;
-  if ((rc = hc__db_core_write_ensure_blocks(write, count)) < 0) return rc;
+  err = hc_merkle_tree_append(upgrade, write, buffers, count);
+  if (err < 0) return err;
+
+  err = hc__db_core_write_ensure_blocks(write, count);
+  if (err < 0) return err;
 
   for (size_t i = 0; i < count; i++) {
-    if ((rc = hc__db_core_write_block(write, upgrade->core->length + i, buffers[i])) < 0) return rc;
+    err = hc__db_core_write_block(write, upgrade->core->length + i, buffers[i]);
+    if (err < 0) return err;
   }
 
   return hc__db_core_write_flush(write);
@@ -50,13 +54,13 @@ hc_core_append (hc_core_t *core, const hc_buf_t *buffers, size_t count) {
   hc_core_upgrade_init(&upgrade, core);
   hc__db_core_write_init(&write, &core->db);
 
-  int rc = hc_core_append_work(&upgrade, &write, buffers, count);
+  int err = hc_core_append_work(&upgrade, &write, buffers, count);
 
-  if (rc == 0) hc_core_commit(&upgrade);
+  if (err == 0) hc_core_commit(&upgrade);
 
   hc__db_core_write_destroy(&write);
   hc_core_upgrade_destroy(&upgrade);
-  return rc;
+  return err;
 }
 
 int

@@ -118,9 +118,9 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     }
   }
 
-  int rc = kv_write_batch_flush(&kv_batch);
+  int err = kv_write_batch_flush(&kv_batch);
   kv_write_batch_destroy(&kv_batch);
-  return rc;
+  return err;
 }
 
 static inline int
@@ -217,9 +217,9 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
     }
   }
 
-  int rc = kv_read_batch_flush(&kv_batch);
+  int err = kv_read_batch_flush(&kv_batch);
   kv_read_batch_destroy(&kv_batch);
-  if (rc < 0) return rc;
+  if (err < 0) return err;
 
   for (size_t i = 0; i < read->small_reads.length; i++) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];
