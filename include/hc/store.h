@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 typedef struct {
-  hc__db_store_t db;
+  hc__db_t db;
   hc_store_head_t head;
 } hc_store_t;
 

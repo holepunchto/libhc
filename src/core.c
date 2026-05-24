@@ -8,8 +8,8 @@
 #include "hc/merkle_tree.h"
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, rocksdb_t *db, rocksdb_column_family_t *cf, const hc_hash_t key, const hc_hash_t discovery_key) {
-  hc__db_core_init(&core->db, core_ptr, data_ptr, db, cf);
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, hc__db_t *db, const hc_hash_t key, const hc_hash_t discovery_key) {
+  hc__db_core_init(&core->db, core_ptr, data_ptr, db);
   memcpy(core->key, key, sizeof(hc_hash_t));
   memcpy(core->discovery_key, discovery_key, sizeof(hc_hash_t));
   core->manifest = NULL;
@@ -91,12 +91,12 @@ hc_core_load (hc_core_t *core) {
 
   rocksdb_read_t read;
   read.type = rocksdb_get;
-  read.column_family = core->db.cf;
+  read.column_family = core->db.db->cf;
   read.key = rocksdb_slice_init((const char *) head_key.buf.buffer, head_key.buf.len);
   read.value = rocksdb_slice_empty();
 
   rocksdb_read_batch_t batch;
-  int err = rocksdb_read(core->db.db, &batch, &read, 1, NULL, NULL);
+  int err = rocksdb_read(&core->db.db->rocks, &batch, &read, 1, NULL, NULL);
   if (err == 0 && batch.errors != NULL && batch.errors[0] != NULL) err = -1;
 
   if (err < 0) {

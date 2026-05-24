@@ -36,10 +36,13 @@ typedef struct hc_store_core_s {
   uint64_t data_ptr;
 } hc_store_core_t;
 
-typedef struct hc__db_store_s hc__db_store_t;
+// Bundle of a rocksdb handle and the active column family. Owned by an
+// hc_store_t; borrowed (by pointer) by per-core db handles. The store
+// only ever talks to one (rocks, cf) combo, so they travel together.
+typedef struct hc__db_s hc__db_t;
 
-struct hc__db_store_s {
-  rocksdb_t db;
+struct hc__db_s {
+  rocksdb_t rocks;
   rocksdb_column_family_t *cf;
 };
 
@@ -48,43 +51,41 @@ struct hc__db_store_s {
 // in sync mode (cb == NULL) it isn't actually serviced but is still
 // required by the API.
 static inline int
-hc__db_store_init (hc__db_store_t *db, const char *path, uv_loop_t *loop) {
+hc__db_init (hc__db_t *db, const char *path, uv_loop_t *loop) {
   if (path == NULL) return -1;
 
   rocksdb_options_t opts = { .create_if_missing = true };
   rocksdb_column_family_descriptor_t desc = rocksdb_column_family_descriptor("default", NULL);
 
   rocksdb_open_t req;
-  int rc = rocksdb_open(loop, &db->db, &req, path, &opts, &desc, &db->cf, 1, NULL, NULL);
+  int rc = rocksdb_open(loop, &db->rocks, &req, path, &opts, &desc, &db->cf, 1, NULL, NULL);
   int err = (rc < 0 || req.error != NULL) ? -1 : 0;
   rocksdb_open_cleanup(&req);
   return err;
 }
 
 static inline void
-hc__db_store_destroy (hc__db_store_t *db) {
-  rocksdb_column_family_destroy(&db->db, db->cf);
+hc__db_destroy (hc__db_t *db) {
+  rocksdb_column_family_destroy(&db->rocks, db->cf);
 
   rocksdb_close_t req;
-  rocksdb_close(&db->db, &req, NULL, NULL);
+  rocksdb_close(&db->rocks, &req, NULL, NULL);
   rocksdb_close_cleanup(&req);
 }
 
 typedef struct hc__db_core_s hc__db_core_t;
 
 struct hc__db_core_s {
-  rocksdb_t *db;
-  rocksdb_column_family_t *cf;
+  hc__db_t *db;
   uint64_t core_ptr;
   uint64_t data_ptr;
 };
 
 static inline int
-hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr, rocksdb_t *rocks, rocksdb_column_family_t *cf) {
-  db->db = rocks;
-  db->cf = cf;
-  db->core_ptr = core_ptr;
-  db->data_ptr = data_ptr;
+hc__db_core_init (hc__db_core_t *core, uint64_t core_ptr, uint64_t data_ptr, hc__db_t *db) {
+  core->db = db;
+  core->core_ptr = core_ptr;
+  core->data_ptr = data_ptr;
   return 0;
 }
 
@@ -167,7 +168,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
   for (size_t j = 0; j < write->tree_nodes.length; j++) {
     hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[j];
     writes[i].type = rocksdb_put;
-    writes[i].column_family = write->db->cf;
+    writes[i].column_family = write->db->db->cf;
     writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
@@ -176,7 +177,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
   for (size_t j = 0; j < write->blocks.length; j++) {
     hc__db_block_kv_t *kv = &write->blocks.buffers[j];
     writes[i].type = rocksdb_put;
-    writes[i].column_family = write->db->cf;
+    writes[i].column_family = write->db->db->cf;
     writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
@@ -185,7 +186,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
   for (size_t j = 0; j < write->deletes.length; j++) {
     hc_small_key_t *key = &write->deletes.buffers[j];
     writes[i].type = rocksdb_delete;
-    writes[i].column_family = write->db->cf;
+    writes[i].column_family = write->db->db->cf;
     writes[i].key = rocksdb_slice_init((const char *) key->buf.buffer, key->buf.len);
     writes[i].value = rocksdb_slice_empty();
     i++;
@@ -194,14 +195,14 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
   if (write->has_head) {
     hc__db_core_head_kv_t *kv = &write->head;
     writes[i].type = rocksdb_put;
-    writes[i].column_family = write->db->cf;
+    writes[i].column_family = write->db->db->cf;
     writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
   }
 
   rocksdb_write_batch_t batch;
-  int rc = rocksdb_write(write->db->db, &batch, writes, total, NULL, NULL);
+  int rc = rocksdb_write(&write->db->db->rocks, &batch, writes, total, NULL, NULL);
   int err = (rc < 0 || batch.error != NULL) ? -1 : 0;
   rocksdb_write_cleanup(&batch);
   free(writes);
@@ -311,13 +312,13 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
   for (size_t i = 0; i < total; i++) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];
     reads[i].type = rocksdb_get;
-    reads[i].column_family = read->db->cf;
+    reads[i].column_family = read->db->db->cf;
     reads[i].key = rocksdb_slice_init((const char *) e->key.buf.buffer, e->key.buf.len);
     reads[i].value = rocksdb_slice_empty();
   }
 
   rocksdb_read_batch_t batch;
-  int rc = rocksdb_read(read->db->db, &batch, reads, total, NULL, NULL);
+  int rc = rocksdb_read(&read->db->db->rocks, &batch, reads, total, NULL, NULL);
   int err = (rc < 0) ? -1 : 0;
 
   for (size_t i = 0; i < total; i++) {
@@ -395,14 +396,14 @@ typedef struct {
 
 typedef struct hc__db_store_write_s hc__db_store_write_t;
 struct hc__db_store_write_s {
-  hc__db_store_t *db;
+  hc__db_t *db;
   hc__db_store_head_kv_t head;
   uint8_t has_head;
   HC__ARRAY(hc__db_store_core_kv_t) cores;
 };
 
 static inline void
-hc__db_store_write_init (hc__db_store_write_t *write, hc__db_store_t *db) {
+hc__db_store_write_init (hc__db_store_write_t *write, hc__db_t *db) {
   write->db = db;
   write->has_head = 0;
   hc__array_init(&write->cores);
@@ -465,7 +466,7 @@ hc__db_store_write_flush (hc__db_store_write_t *write) {
   }
 
   rocksdb_write_batch_t batch;
-  int rc = rocksdb_write(&write->db->db, &batch, writes, total, NULL, NULL);
+  int rc = rocksdb_write(&write->db->rocks, &batch, writes, total, NULL, NULL);
   int err = (rc < 0 || batch.error != NULL) ? -1 : 0;
   rocksdb_write_cleanup(&batch);
   free(writes);
@@ -485,12 +486,12 @@ typedef struct {
 } hc__db_store_small_read_t;
 
 typedef struct {
-  hc__db_store_t *db;
+  hc__db_t *db;
   HC__ARRAY(hc__db_store_small_read_t) small_reads;
 } hc__db_store_read_t;
 
 static inline void
-hc__db_store_read_init (hc__db_store_read_t *read, hc__db_store_t *db) {
+hc__db_store_read_init (hc__db_store_read_t *read, hc__db_t *db) {
   read->db = db;
   hc__array_init(&read->small_reads);
 }
@@ -544,7 +545,7 @@ hc__db_store_read_flush (hc__db_store_read_t *read) {
   }
 
   rocksdb_read_batch_t batch;
-  int rc = rocksdb_read(&read->db->db, &batch, reads, total, NULL, NULL);
+  int rc = rocksdb_read(&read->db->rocks, &batch, reads, total, NULL, NULL);
   int err = (rc < 0) ? -1 : 0;
 
   for (size_t i = 0; i < total; i++) {

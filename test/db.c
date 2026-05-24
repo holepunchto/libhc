@@ -22,12 +22,12 @@ static rocksdb_slice_t
 read_key (hc__db_core_t *db, const uint8_t *key, size_t key_len) {
   rocksdb_read_t r;
   r.type = rocksdb_get;
-  r.column_family = db->cf;
+  r.column_family = db->db->cf;
   r.key = rocksdb_slice_init((const char *) key, key_len);
   r.value = rocksdb_slice_empty();
 
   rocksdb_read_batch_t batch;
-  assert(rocksdb_read(db->db, &batch, &r, 1, NULL, NULL) == 0);
+  assert(rocksdb_read(&db->db->rocks, &batch, &r, 1, NULL, NULL) == 0);
   rocksdb_read_cleanup(&batch);
   return r.value;
 }
@@ -37,11 +37,11 @@ main () {
   char dir[2048];
   assert(hc_test_mkdtemp(dir, sizeof(dir), "libhc-db") == 0);
 
-  hc__db_store_t store;
-  assert(hc__db_store_init(&store, dir, uv_default_loop()) == 0);
+  hc__db_t store;
+  assert(hc__db_init(&store, dir, uv_default_loop()) == 0);
 
   hc__db_core_t db;
-  assert(hc__db_core_init(&db, 0, 0, &store.db, store.cf) == 0);
+  assert(hc__db_core_init(&db, 0, 0, &store) == 0);
 
   // Write a single tree node via hc__db_core_write_t.
   hc_merkle_tree_node_t node = {.index = 7, .size = 42};
@@ -109,7 +109,7 @@ main () {
   }
 
   hc__db_core_destroy(&db);
-  hc__db_store_destroy(&store);
+  hc__db_destroy(&store);
   hc_test_rmdir(dir);
   return 0;
 }

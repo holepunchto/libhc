@@ -27,7 +27,7 @@ struct hc_core_s {
 };
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, rocksdb_t *db, rocksdb_column_family_t *cf, const hc_hash_t key, const hc_hash_t discovery_key);
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, hc__db_t *db, const hc_hash_t key, const hc_hash_t discovery_key);
 
 void
 hc_core_destroy (hc_core_t *core);

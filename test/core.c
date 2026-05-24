@@ -15,11 +15,11 @@ main () {
   char dir[2048];
   assert(hc_test_mkdtemp(dir, sizeof(dir), "libhc-core") == 0);
 
-  hc__db_store_t db;
-  assert(hc__db_store_init(&db, dir, uv_default_loop()) == 0);
+  hc__db_t db;
+  assert(hc__db_init(&db, dir, uv_default_loop()) == 0);
 
   hc_core_t core;
-  assert(hc_core_init(&core, 0, 0, &db.db, db.cf, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
+  assert(hc_core_init(&core, 0, 0, &db, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
 
   uint8_t block_data[64];
   memset(block_data, 0xcd, sizeof(block_data));
@@ -45,7 +45,7 @@ main () {
   assert(roots_byte_length == core.byte_length);
 
   hc_core_destroy(&core);
-  hc__db_store_destroy(&db);
+  hc__db_destroy(&db);
   hc_test_rmdir(dir);
   return 0;
 }
