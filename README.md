@@ -28,7 +28,7 @@ main () {
   hc_crypto_keypair(&kp, NULL);
 
   hc_manifest_t manifest;
-  hc_manifest_init_default(&manifest, &kp);
+  hc_manifest_init_single_signer(&manifest, &kp);
 
   hc_hash_t key, discovery_key;
   hc_hashes_manifest(key, &manifest);

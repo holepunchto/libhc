@@ -55,7 +55,7 @@ hc_hashes_tree_signable (uint8_t out[112], const hc_hashes_t *hashes, const hc_h
 }
 
 int
-hc_manifest_init_default (hc_manifest_t *manifest, const hc_crypto_keypair_t *keypair) {
+hc_manifest_init_single_signer (hc_manifest_t *manifest, const hc_crypto_keypair_t *keypair) {
   hc_hashes_t hashes;
   hc_hashes_init(&hashes);
 
