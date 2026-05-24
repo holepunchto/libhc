@@ -8,7 +8,7 @@
 int
 main () {
   hc_store_t store;
-  assert(hc_store_init(&store) == 0);
+  assert(hc_store_init(&store, NULL) == 0);
 
   assert(store.head.cores == 0);
   assert(store.head.datas == 0);

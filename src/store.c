@@ -5,14 +5,14 @@
 #include "hc/store.h"
 
 int
-hc_store_init (hc_store_t *store) {
-  hc__db_store_init(&store->db);
+hc_store_init (hc_store_t *store, const char *path) {
+  int err = hc__db_store_init(&store->db, path);
+  if (err < 0) return err;
   memset(&store->head, 0, sizeof(store->head));
 
   hc__db_store_read_t read;
   hc__db_store_read_init(&read, &store->db);
 
-  int err = 0;
   err = hc__db_store_read_get_head(&read, &store->head);
   if (err < 0) {
     hc__db_store_read_destroy(&read);

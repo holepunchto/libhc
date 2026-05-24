@@ -22,7 +22,7 @@ See `include/hc.h` and the sub-headers it includes.
 int
 main () {
   hc_store_t store;
-  hc_store_init(&store);
+  hc_store_init(&store, NULL); // NULL = in-memory
 
   hc_crypto_keypair_t kp;
   hc_crypto_keypair(&kp, NULL);

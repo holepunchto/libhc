@@ -40,8 +40,11 @@ struct hc__db_store_s {
   kv_t kv;
 };
 
+// path == NULL opens an in-memory kv. Non-NULL paths are reserved for the
+// file-backed kv backend (not yet implemented in libkv) and return -1.
 static inline int
-hc__db_store_init (hc__db_store_t *db) {
+hc__db_store_init (hc__db_store_t *db, const char *path) {
+  if (path != NULL) return -1; // TODO: file-backed kv
   kv_init(&db->kv);
   return 0;
 }

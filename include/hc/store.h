@@ -17,8 +17,10 @@ typedef struct {
   hc_store_head_t head;
 } hc_store_t;
 
+// path == NULL opens an in-memory store. Non-NULL paths are reserved for
+// the file-backed kv backend (not yet implemented).
 int
-hc_store_init (hc_store_t *store);
+hc_store_init (hc_store_t *store, const char *path);
 
 void
 hc_store_destroy (hc_store_t *store);
