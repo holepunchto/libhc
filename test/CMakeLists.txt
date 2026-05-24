@@ -3,6 +3,7 @@ list(APPEND tests
   crypto
   db
   manifest
+  store
 )
 
 foreach(test IN LISTS tests)

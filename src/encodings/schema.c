@@ -323,6 +323,37 @@ hc_store_head_decode (compact_state_t *state, hc_store_head_t *h) {
 }
 
 int
+hc_store_core_preencode (compact_state_t *state, uint64_t core_ptr, uint64_t data_ptr) {
+  compact_preencode_uint(state, 1); // version
+  compact_preencode_uint(state, core_ptr);
+  compact_preencode_uint(state, data_ptr);
+  compact_preencode_uint(state, 0); // flags (no alias)
+  return 0;
+}
+
+int
+hc_store_core_encode (compact_state_t *state, uint64_t core_ptr, uint64_t data_ptr) {
+  compact_encode_uint(state, 1); // version
+  compact_encode_uint(state, core_ptr);
+  compact_encode_uint(state, data_ptr);
+  compact_encode_uint(state, 0); // flags (no alias)
+  return 0;
+}
+
+int
+hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data_ptr) {
+  uintmax_t version, cp, dp, flags;
+  if (compact_decode_uint(state, &version) < 0) return -1;
+  if (version != 1) return -1;
+  if (compact_decode_uint(state, &cp) < 0) return -1;
+  if (compact_decode_uint(state, &dp) < 0) return -1;
+  if (compact_decode_uint(state, &flags) < 0) return -1;
+  *core_ptr = (uint64_t) cp;
+  *data_ptr = (uint64_t) dp;
+  return 0;
+}
+
+int
 hc_manifest_decode (compact_state_t *state, hc_manifest_t *m) {
   uintmax_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;

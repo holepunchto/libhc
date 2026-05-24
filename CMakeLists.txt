@@ -207,6 +207,7 @@ target_sources(
   PRIVATE
     src/hashes.c
     src/core.c
+    src/store.c
     src/crypto.c
     src/keys.c
     src/merkle_tree.c

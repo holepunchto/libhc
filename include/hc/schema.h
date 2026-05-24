@@ -40,6 +40,13 @@ hc_store_head_encode (compact_state_t *state, const hc_store_head_t *head);
 int
 hc_store_head_decode (compact_state_t *state, hc_store_head_t *head);
 
+int
+hc_store_core_preencode (compact_state_t *state, uint64_t core_ptr, uint64_t data_ptr);
+int
+hc_store_core_encode (compact_state_t *state, uint64_t core_ptr, uint64_t data_ptr);
+int
+hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data_ptr);
+
 #ifdef __cplusplus
 }
 #endif
