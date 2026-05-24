@@ -205,7 +205,7 @@ target_sources(
     include/hc/merkle_tree.h
     include/hc/schema.h
   PRIVATE
-    src/caps.c
+    src/hashes.c
     src/core.c
     src/crypto.c
     src/keys.c

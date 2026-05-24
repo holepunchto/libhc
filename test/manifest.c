@@ -5,7 +5,7 @@
 
 #include <compact.h>
 
-#include "hc/caps.h"
+#include "hc/hashes.h"
 #include "hc/schema.h"
 
 // Expected bytes produced by the JS hypercore messages.manifest codec for this
@@ -84,7 +84,7 @@ main () {
   };
 
   hc_hash_t hash;
-  assert(hc_manifest_hash(hash, &m) == 0);
+  assert(hc_hashes_manifest(hash, &m) == 0);
   assert(memcmp(hash, expected_hash, 32) == 0);
 
   return 0;

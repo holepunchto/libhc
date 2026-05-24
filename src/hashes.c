@@ -4,11 +4,11 @@
 #include <compact.h>
 #include <sodium.h>
 
-#include "hc/caps.h"
+#include "hc/hashes.h"
 #include "hc/schema.h"
 
 static void
-namespace_cap (hc_hash_t out, uint8_t index) {
+namespace_hash (hc_hash_t out, uint8_t index) {
   uint8_t ns[33];
   crypto_generichash(ns, 32, (const uint8_t *) "hypercore", 9, NULL, 0);
   ns[32] = index;
@@ -16,19 +16,19 @@ namespace_cap (hc_hash_t out, uint8_t index) {
 }
 
 void
-hc_caps_init (hc_caps_t *caps) {
-  namespace_cap(caps->tree, 0);
-  namespace_cap(caps->replicate_initiator, 1);
-  namespace_cap(caps->replicate_responder, 2);
-  namespace_cap(caps->manifest, 3);
-  namespace_cap(caps->default_namespace, 4);
-  namespace_cap(caps->default_encryption, 5);
+hc_hashes_init (hc_hashes_t *hashes) {
+  namespace_hash(hashes->tree, 0);
+  namespace_hash(hashes->replicate_initiator, 1);
+  namespace_hash(hashes->replicate_responder, 2);
+  namespace_hash(hashes->manifest, 3);
+  namespace_hash(hashes->default_namespace, 4);
+  namespace_hash(hashes->default_encryption, 5);
 }
 
 void
-hc_caps_replicate (hc_hash_t out, const hc_caps_t *caps, int is_initiator, const hc_hash_t key, const hc_hash_t handshake_hash) {
+hc_hashes_replicate (hc_hash_t out, const hc_hashes_t *hashes, int is_initiator, const hc_hash_t key, const hc_hash_t handshake_hash) {
   uint8_t input[64];
-  memcpy(input, is_initiator ? caps->replicate_initiator : caps->replicate_responder, 32);
+  memcpy(input, is_initiator ? hashes->replicate_initiator : hashes->replicate_responder, 32);
   memcpy(input + 32, key, 32);
   crypto_generichash(out, 32, input, 64, handshake_hash, 32);
 }
@@ -46,8 +46,8 @@ write_uint64_le (uint8_t *dst, uint64_t v) {
 }
 
 void
-hc_caps_tree_signable (uint8_t out[112], const hc_caps_t *caps, const hc_hash_t manifest_hash, const hc_hash_t tree_hash, uint64_t length, uint64_t fork) {
-  memcpy(out, caps->tree, 32);
+hc_hashes_tree_signable (uint8_t out[112], const hc_hashes_t *hashes, const hc_hash_t manifest_hash, const hc_hash_t tree_hash, uint64_t length, uint64_t fork) {
+  memcpy(out, hashes->tree, 32);
   memcpy(out + 32, manifest_hash, 32);
   memcpy(out + 64, tree_hash, 32);
   write_uint64_le(out + 96, length);
@@ -55,7 +55,7 @@ hc_caps_tree_signable (uint8_t out[112], const hc_caps_t *caps, const hc_hash_t 
 }
 
 int
-hc_manifest_hash (hc_hash_t out, const hc_manifest_t *manifest) {
+hc_hashes_manifest (hc_hash_t out, const hc_manifest_t *manifest) {
   compact_state_t state = {0, 0, NULL};
   if (hc_manifest_preencode(&state, manifest) < 0) return -1;
 
@@ -68,12 +68,12 @@ hc_manifest_hash (hc_hash_t out, const hc_manifest_t *manifest) {
     return -1;
   }
 
-  hc_caps_t caps;
-  hc_caps_init(&caps);
+  hc_hashes_t hashes;
+  hc_hashes_init(&hashes);
 
   crypto_generichash_state hash_state;
   crypto_generichash_init(&hash_state, NULL, 0, HC_CRYPTO_HASH_SIZE);
-  crypto_generichash_update(&hash_state, caps.manifest, HC_CRYPTO_HASH_SIZE);
+  crypto_generichash_update(&hash_state, hashes.manifest, HC_CRYPTO_HASH_SIZE);
   crypto_generichash_update(&hash_state, buf, state.start);
   crypto_generichash_final(&hash_state, out, HC_CRYPTO_HASH_SIZE);
 
