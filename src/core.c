@@ -52,8 +52,7 @@ hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, con
     .signature = {0, NULL},
     .timestamp = 0,
   };
-  // TODO: compute root_hash from upgrade->roots once the tree-hash construct is wired up.
-  memset(head.root_hash, 0, sizeof(head.root_hash));
+  hc_crypto_tree(head.root_hash, (const hc_crypto_node_t *) upgrade->roots.buffers, upgrade->roots.length);
 
   err = hc__db_core_write_head(write, &head);
   if (err < 0) return err;
