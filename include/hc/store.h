@@ -17,10 +17,11 @@ typedef struct {
   hc_store_head_t head;
 } hc_store_t;
 
-// path == NULL opens an in-memory store. Non-NULL paths are reserved for
-// the file-backed kv backend (not yet implemented).
+// Opens the persistent store at `path`. `loop` is forwarded to librocksdb;
+// in sync mode it isn't actually serviced but is still required by the
+// API. Returns -1 if `path` is NULL or the store cannot be opened.
 int
-hc_store_init (hc_store_t *store, const char *path);
+hc_store_init (hc_store_t *store, const char *path, uv_loop_t *loop);
 
 void
 hc_store_destroy (hc_store_t *store);

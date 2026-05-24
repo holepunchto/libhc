@@ -26,6 +26,36 @@ hc__test_path_under_tmpdir (const char *path) {
   return 1;
 }
 
+// Create a unique tmp directory under uv_os_tmpdir using the given prefix.
+// The resulting path is written to `out` (must be at least 2048 bytes).
+// Returns 0 on success or a libuv error code on failure.
+static int
+hc_test_mkdtemp (char *out, size_t out_size, const char *prefix) {
+  char base[1024];
+  size_t base_len = sizeof(base);
+  if (uv_os_tmpdir(base, &base_len) != 0) return UV_ENOENT;
+
+  char tpl[2048];
+  int n = snprintf(tpl, sizeof(tpl), "%s/%s-XXXXXX", base, prefix);
+  if (n < 0 || (size_t) n >= sizeof(tpl)) return UV_ENAMETOOLONG;
+
+  uv_fs_t req;
+  int rc = uv_fs_mkdtemp(uv_default_loop(), &req, tpl, NULL);
+  if (rc < 0) {
+    uv_fs_req_cleanup(&req);
+    return rc;
+  }
+
+  size_t path_len = strlen(req.path);
+  if (path_len >= out_size) {
+    uv_fs_req_cleanup(&req);
+    return UV_ENAMETOOLONG;
+  }
+  memcpy(out, req.path, path_len + 1);
+  uv_fs_req_cleanup(&req);
+  return 0;
+}
+
 // Recursively remove a directory and all its contents. Returns 0 on success
 // or a libuv error code on failure. Intended for test teardown only.
 //

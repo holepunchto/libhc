@@ -8,8 +8,8 @@
 #include "hc/merkle_tree.h"
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, kv_t *kv, const hc_hash_t key, const hc_hash_t discovery_key) {
-  hc__db_core_init(&core->db, core_ptr, data_ptr, kv);
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, rocksdb_t *db, rocksdb_column_family_t *cf, const hc_hash_t key, const hc_hash_t discovery_key) {
+  hc__db_core_init(&core->db, core_ptr, data_ptr, db, cf);
   memcpy(core->key, key, sizeof(hc_hash_t));
   memcpy(core->discovery_key, discovery_key, sizeof(hc_hash_t));
   core->manifest = NULL;
@@ -89,30 +89,32 @@ hc_core_load (hc_core_t *core) {
   hc_small_key_t head_key;
   hc_key_core_head(&head_key, core->db.data_ptr);
 
-  kv_read_batch_t read;
-  kv_read_batch_init(&read, core->db.kv, 1);
+  rocksdb_read_t read;
+  read.type = rocksdb_get;
+  read.column_family = core->db.cf;
+  read.key = rocksdb_slice_init((const char *) head_key.buf.buffer, head_key.buf.len);
+  read.value = rocksdb_slice_empty();
 
-  uint8_t *head_val = NULL;
-  size_t head_val_len = 0;
+  rocksdb_read_batch_t batch;
+  int err = rocksdb_read(core->db.db, &batch, &read, 1, NULL, NULL);
+  if (err == 0 && batch.errors != NULL && batch.errors[0] != NULL) err = -1;
 
-  int err = 0;
-
-  err = kv_read_batch_get(&read, head_key.buf.buffer, head_key.buf.len, &head_val, &head_val_len);
   if (err < 0) {
-    kv_read_batch_destroy(&read);
+    if (read.value.data) rocksdb_slice_destroy(&read.value);
+    rocksdb_read_cleanup(&batch);
     return err;
   }
 
-  err = kv_read_batch_flush(&read);
-  kv_read_batch_destroy(&read);
-  if (err < 0) return err;
-
-  if (head_val == NULL) return 0;
+  if (read.value.data == NULL) {
+    rocksdb_read_cleanup(&batch);
+    return 0;
+  }
 
   hc_head_t head = {0};
-  compact_state_t vs = {0, head_val_len, head_val};
+  compact_state_t vs = {0, read.value.len, (uint8_t *) (uintptr_t) read.value.data};
   err = hc_head_decode(&vs, &head);
-  free(head_val);
+  rocksdb_slice_destroy(&read.value);
+  rocksdb_read_cleanup(&batch);
   if (err < 0) return err;
 
   core->fork = head.fork;

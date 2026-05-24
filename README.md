@@ -13,6 +13,8 @@ See `include/hc.h` and the sub-headers it includes.
 ```c
 #include <string.h>
 
+#include <uv.h>
+
 #include "hc/core.h"
 #include "hc/crypto.h"
 #include "hc/hashes.h"
@@ -22,7 +24,7 @@ See `include/hc.h` and the sub-headers it includes.
 int
 main () {
   hc_store_t store;
-  hc_store_init(&store, NULL); // NULL = in-memory
+  hc_store_init(&store, "/tmp/libhc-hello", uv_default_loop());
 
   hc_crypto_keypair_t kp;
   hc_crypto_keypair(&kp, NULL);

@@ -1,14 +1,20 @@
 #include <assert.h>
 #include <string.h>
 
+#include <uv.h>
+
 #include "hc/buffer.h"
 #include "hc/core.h"
 #include "hc/store.h"
+#include "tmp.h"
 
 int
 main () {
+  char dir[2048];
+  assert(hc_test_mkdtemp(dir, sizeof(dir), "libhc-store") == 0);
+
   hc_store_t store;
-  assert(hc_store_init(&store, NULL) == 0);
+  assert(hc_store_init(&store, dir, uv_default_loop()) == 0);
 
   assert(store.head.cores == 0);
   assert(store.head.datas == 0);
@@ -86,5 +92,6 @@ main () {
   }
 
   hc_store_destroy(&store);
+  hc_test_rmdir(dir);
   return 0;
 }

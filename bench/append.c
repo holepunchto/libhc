@@ -3,9 +3,11 @@
 #include <string.h>
 #include <time.h>
 
-#include <kv.h>
+#include <uv.h>
 
 #include "hc/core.h"
+#include "hc/db.h"
+#include "../test/tmp.h"
 
 #define N 100000
 
@@ -18,11 +20,14 @@ now_ns () {
 
 int
 main () {
-  kv_t kv;
-  kv_init(&kv);
+  char dir[2048];
+  assert(hc_test_mkdtemp(dir, sizeof(dir), "libhc-bench-append") == 0);
+
+  hc__db_store_t db;
+  assert(hc__db_store_init(&db, dir, uv_default_loop()) == 0);
 
   hc_core_t core;
-  assert(hc_core_init(&core, 0, 0, &kv, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
+  assert(hc_core_init(&core, 0, 0, &db.db, db.cf, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
 
   uint8_t block_data[1024];
   memset(block_data, 0xcd, sizeof(block_data));
@@ -42,6 +47,7 @@ main () {
   printf("appended %d blocks in %.2f ms (%.2f us/block)\n", N, elapsed_ms, per_block_us);
 
   hc_core_destroy(&core);
-  kv_destroy(&kv);
+  hc__db_store_destroy(&db);
+  hc_test_rmdir(dir);
   return 0;
 }

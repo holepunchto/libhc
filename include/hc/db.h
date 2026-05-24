@@ -3,8 +3,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#include <kv.h>
+#include <rocksdb.h>
+#include <uv.h>
 
 #include "array.h"
 #include "buffer.h"
@@ -37,34 +39,50 @@ typedef struct hc_store_core_s {
 typedef struct hc__db_store_s hc__db_store_t;
 
 struct hc__db_store_s {
-  kv_t kv;
+  rocksdb_t db;
+  rocksdb_column_family_t *cf;
 };
 
-// path == NULL opens an in-memory kv. Non-NULL paths are reserved for the
-// file-backed kv backend (not yet implemented in libkv) and return -1.
+// Opens the rocksdb at `path` synchronously and stashes a handle to the
+// default column family. `loop` is used by librocksdb's worker machinery;
+// in sync mode (cb == NULL) it isn't actually serviced but is still
+// required by the API.
 static inline int
-hc__db_store_init (hc__db_store_t *db, const char *path) {
-  if (path != NULL) return -1; // TODO: file-backed kv
-  kv_init(&db->kv);
-  return 0;
+hc__db_store_init (hc__db_store_t *db, const char *path, uv_loop_t *loop) {
+  if (path == NULL) return -1;
+
+  rocksdb_options_t opts = { .create_if_missing = true };
+  rocksdb_column_family_descriptor_t desc = rocksdb_column_family_descriptor("default", NULL);
+
+  rocksdb_open_t req;
+  int rc = rocksdb_open(loop, &db->db, &req, path, &opts, &desc, &db->cf, 1, NULL, NULL);
+  int err = (rc < 0 || req.error != NULL) ? -1 : 0;
+  rocksdb_open_cleanup(&req);
+  return err;
 }
 
 static inline void
 hc__db_store_destroy (hc__db_store_t *db) {
-  kv_destroy(&db->kv);
+  rocksdb_column_family_destroy(&db->db, db->cf);
+
+  rocksdb_close_t req;
+  rocksdb_close(&db->db, &req, NULL, NULL);
+  rocksdb_close_cleanup(&req);
 }
 
 typedef struct hc__db_core_s hc__db_core_t;
 
 struct hc__db_core_s {
-  kv_t *kv;
+  rocksdb_t *db;
+  rocksdb_column_family_t *cf;
   uint64_t core_ptr;
   uint64_t data_ptr;
 };
 
 static inline int
-hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr, kv_t *kv) {
-  db->kv = kv;
+hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr, rocksdb_t *rocks, rocksdb_column_family_t *cf) {
+  db->db = rocks;
+  db->cf = cf;
   db->core_ptr = core_ptr;
   db->data_ptr = data_ptr;
   return 0;
@@ -138,43 +156,55 @@ hc__db_core_write_destroy (hc__db_core_write_t *write) {
 
 static inline int
 hc__db_core_write_flush (hc__db_core_write_t *write) {
-  kv_write_batch_t kv_batch;
-  kv_write_batch_init(&kv_batch, write->db->kv, write->tree_nodes.length + write->blocks.length + write->deletes.length + (write->has_head ? 1 : 0));
+  size_t total = write->tree_nodes.length + write->blocks.length + write->deletes.length + (write->has_head ? 1 : 0);
+  if (total == 0) return 0;
 
-  for (size_t i = 0; i < write->tree_nodes.length; i++) {
-    hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[i];
-    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+  rocksdb_write_t *writes = (rocksdb_write_t *) malloc(total * sizeof(rocksdb_write_t));
+  if (writes == NULL) return -1;
+
+  size_t i = 0;
+
+  for (size_t j = 0; j < write->tree_nodes.length; j++) {
+    hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[j];
+    writes[i].type = rocksdb_put;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    i++;
   }
 
-  for (size_t i = 0; i < write->blocks.length; i++) {
-    hc__db_block_kv_t *kv = &write->blocks.buffers[i];
-    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+  for (size_t j = 0; j < write->blocks.length; j++) {
+    hc__db_block_kv_t *kv = &write->blocks.buffers[j];
+    writes[i].type = rocksdb_put;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    i++;
   }
 
-  for (size_t i = 0; i < write->deletes.length; i++) {
-    hc_small_key_t *key = &write->deletes.buffers[i];
-    if (kv_write_batch_del(&kv_batch, key->buf.buffer, key->buf.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+  for (size_t j = 0; j < write->deletes.length; j++) {
+    hc_small_key_t *key = &write->deletes.buffers[j];
+    writes[i].type = rocksdb_delete;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) key->buf.buffer, key->buf.len);
+    writes[i].value = rocksdb_slice_empty();
+    i++;
   }
 
   if (write->has_head) {
     hc__db_core_head_kv_t *kv = &write->head;
-    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+    writes[i].type = rocksdb_put;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    i++;
   }
 
-  int err = kv_write_batch_flush(&kv_batch);
-  kv_write_batch_destroy(&kv_batch);
+  rocksdb_write_batch_t batch;
+  int rc = rocksdb_write(write->db->db, &batch, writes, total, NULL, NULL);
+  int err = (rc < 0 || batch.error != NULL) ? -1 : 0;
+  rocksdb_write_cleanup(&batch);
+  free(writes);
   return err;
 }
 
@@ -272,24 +302,45 @@ hc__db_core_read_destroy (hc__db_core_read_t *read) {
 
 static inline int
 hc__db_core_read_flush (hc__db_core_read_t *read) {
-  kv_read_batch_t kv_batch;
-  kv_read_batch_init(&kv_batch, read->db->kv, read->small_reads.length);
+  size_t total = read->small_reads.length;
+  if (total == 0) return 0;
 
-  for (size_t i = 0; i < read->small_reads.length; i++) {
+  rocksdb_read_t *reads = (rocksdb_read_t *) malloc(total * sizeof(rocksdb_read_t));
+  if (reads == NULL) return -1;
+
+  for (size_t i = 0; i < total; i++) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];
-    if (kv_read_batch_get(&kv_batch, e->key.buf.buffer, e->key.buf.len, &e->value.buffer, &e->value.len) < 0) {
-      kv_read_batch_destroy(&kv_batch);
-      return -1;
-    }
+    reads[i].type = rocksdb_get;
+    reads[i].column_family = read->db->cf;
+    reads[i].key = rocksdb_slice_init((const char *) e->key.buf.buffer, e->key.buf.len);
+    reads[i].value = rocksdb_slice_empty();
   }
 
-  int err = kv_read_batch_flush(&kv_batch);
-  kv_read_batch_destroy(&kv_batch);
-  if (err < 0) return err;
+  rocksdb_read_batch_t batch;
+  int rc = rocksdb_read(read->db->db, &batch, reads, total, NULL, NULL);
+  int err = (rc < 0) ? -1 : 0;
 
-  for (size_t i = 0; i < read->small_reads.length; i++) {
+  for (size_t i = 0; i < total; i++) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];
-    if (e->value.buffer == NULL) continue;
+
+    if (err == 0 && batch.errors != NULL && batch.errors[i] != NULL) err = -1;
+
+    if (reads[i].value.data == NULL) continue;
+
+    // Take ownership of the rocksdb-allocated bytes. const_cast is safe
+    // here — librocksdb itself does it inside rocksdb_slice_destroy.
+    e->value.buffer = (uint8_t *) (uintptr_t) reads[i].value.data;
+    e->value.len = reads[i].value.len;
+    reads[i].value.data = NULL;
+    reads[i].value.len = 0;
+
+    if (err < 0) {
+      free(e->value.buffer);
+      e->value.buffer = NULL;
+      e->value.len = 0;
+      continue;
+    }
+
     if (e->type == HC__DB_READ_TREE_NODE) {
       compact_state_t state = {0, e->value.len, e->value.buffer};
       hc_tree_node_decode(&state, (hc_merkle_tree_node_t *) e->result);
@@ -299,7 +350,9 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
     }
   }
 
-  return 0;
+  rocksdb_read_cleanup(&batch);
+  free(reads);
+  return err;
 }
 
 static inline int
@@ -385,27 +438,37 @@ hc__db_store_write_put_core (hc__db_store_write_t *write, const hc_hash_t discov
 
 static inline int
 hc__db_store_write_flush (hc__db_store_write_t *write) {
-  kv_write_batch_t kv_batch;
-  kv_write_batch_init(&kv_batch, &write->db->kv, write->cores.length + (write->has_head ? 1 : 0));
+  size_t total = write->cores.length + (write->has_head ? 1 : 0);
+  if (total == 0) return 0;
+
+  rocksdb_write_t *writes = (rocksdb_write_t *) malloc(total * sizeof(rocksdb_write_t));
+  if (writes == NULL) return -1;
+
+  size_t i = 0;
 
   if (write->has_head) {
     hc__db_store_head_kv_t *kv = &write->head;
-    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+    writes[i].type = rocksdb_put;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    i++;
   }
 
-  for (size_t i = 0; i < write->cores.length; i++) {
-    hc__db_store_core_kv_t *kv = &write->cores.buffers[i];
-    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
-      kv_write_batch_destroy(&kv_batch);
-      return -1;
-    }
+  for (size_t j = 0; j < write->cores.length; j++) {
+    hc__db_store_core_kv_t *kv = &write->cores.buffers[j];
+    writes[i].type = rocksdb_put;
+    writes[i].column_family = write->db->cf;
+    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    i++;
   }
 
-  int err = kv_write_batch_flush(&kv_batch);
-  kv_write_batch_destroy(&kv_batch);
+  rocksdb_write_batch_t batch;
+  int rc = rocksdb_write(&write->db->db, &batch, writes, total, NULL, NULL);
+  int err = (rc < 0 || batch.error != NULL) ? -1 : 0;
+  rocksdb_write_cleanup(&batch);
+  free(writes);
   return err;
 }
 
@@ -466,38 +529,57 @@ hc__db_store_read_get_core (hc__db_store_read_t *read, const hc_hash_t discovery
 
 static inline int
 hc__db_store_read_flush (hc__db_store_read_t *read) {
-  kv_read_batch_t kv_batch;
-  kv_read_batch_init(&kv_batch, &read->db->kv, read->small_reads.length);
+  size_t total = read->small_reads.length;
+  if (total == 0) return 0;
 
-  for (size_t i = 0; i < read->small_reads.length; i++) {
+  rocksdb_read_t *reads = (rocksdb_read_t *) malloc(total * sizeof(rocksdb_read_t));
+  if (reads == NULL) return -1;
+
+  for (size_t i = 0; i < total; i++) {
     hc__db_store_small_read_t *e = &read->small_reads.buffers[i];
-    if (kv_read_batch_get(&kv_batch, e->key.buf.buffer, e->key.buf.len, &e->value.buffer, &e->value.len) < 0) {
-      kv_read_batch_destroy(&kv_batch);
-      return -1;
-    }
+    reads[i].type = rocksdb_get;
+    reads[i].column_family = read->db->cf;
+    reads[i].key = rocksdb_slice_init((const char *) e->key.buf.buffer, e->key.buf.len);
+    reads[i].value = rocksdb_slice_empty();
   }
 
-  int err = kv_read_batch_flush(&kv_batch);
-  kv_read_batch_destroy(&kv_batch);
-  if (err < 0) return err;
+  rocksdb_read_batch_t batch;
+  int rc = rocksdb_read(&read->db->db, &batch, reads, total, NULL, NULL);
+  int err = (rc < 0) ? -1 : 0;
 
-  for (size_t i = 0; i < read->small_reads.length; i++) {
+  for (size_t i = 0; i < total; i++) {
     hc__db_store_small_read_t *e = &read->small_reads.buffers[i];
-    if (e->value.buffer == NULL) continue;
+
+    if (err == 0 && batch.errors != NULL && batch.errors[i] != NULL) err = -1;
+
+    if (reads[i].value.data == NULL) continue;
+
+    uint8_t *bytes = (uint8_t *) (uintptr_t) reads[i].value.data;
+    size_t len = reads[i].value.len;
+    reads[i].value.data = NULL;
+    reads[i].value.len = 0;
+
+    if (err < 0) {
+      free(bytes);
+      continue;
+    }
+
     if (e->type == HC__DB_STORE_READ_HEAD) {
-      compact_state_t state = {0, e->value.len, e->value.buffer};
+      compact_state_t state = {0, len, bytes};
       hc_store_head_decode(&state, (hc_store_head_t *) e->result);
     } else if (e->type == HC__DB_STORE_READ_CORE) {
-      compact_state_t state = {0, e->value.len, e->value.buffer};
+      compact_state_t state = {0, len, bytes};
       hc_store_core_t *out = (hc_store_core_t *) e->result;
       if (hc_store_core_decode(&state, &out->core_ptr, &out->data_ptr) == 0) {
         out->found = 1;
       }
     }
-    free(e->value.buffer);
+    free(bytes);
   }
 
-  return 0;
+  rocksdb_read_cleanup(&batch);
+  free(reads);
+  return err;
 }
 
 #ifdef __cplusplus

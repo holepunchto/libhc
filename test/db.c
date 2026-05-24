@@ -2,25 +2,46 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <kv.h>
+#include <rocksdb.h>
+#include <uv.h>
 
 #include "hc/db.h"
 #include "hc/keys.h"
+#include "tmp.h"
 
 
 static void
-decode_tree_node (hc_buf_t value, hc_merkle_tree_node_t *out) {
-  compact_state_t s = {0, value.len, value.buffer};
+decode_tree_node (uint8_t *data, size_t len, hc_merkle_tree_node_t *out) {
+  compact_state_t s = {0, len, data};
   hc_tree_node_decode(&s, out);
+}
+
+// Read a single key directly via rocksdb. Returns the value (caller frees
+// via rocksdb_slice_destroy) or {NULL, 0} if not found.
+static rocksdb_slice_t
+read_key (hc__db_core_t *db, const uint8_t *key, size_t key_len) {
+  rocksdb_read_t r;
+  r.type = rocksdb_get;
+  r.column_family = db->cf;
+  r.key = rocksdb_slice_init((const char *) key, key_len);
+  r.value = rocksdb_slice_empty();
+
+  rocksdb_read_batch_t batch;
+  assert(rocksdb_read(db->db, &batch, &r, 1, NULL, NULL) == 0);
+  rocksdb_read_cleanup(&batch);
+  return r.value;
 }
 
 int
 main () {
-  kv_t kv;
-  kv_init(&kv);
+  char dir[2048];
+  assert(hc_test_mkdtemp(dir, sizeof(dir), "libhc-db") == 0);
+
+  hc__db_store_t store;
+  assert(hc__db_store_init(&store, dir, uv_default_loop()) == 0);
 
   hc__db_core_t db;
-  assert(hc__db_core_init(&db, 0, 0, &kv) == 0);
+  assert(hc__db_core_init(&db, 0, 0, &store.db, store.cf) == 0);
 
   // Write a single tree node via hc__db_core_write_t.
   hc_merkle_tree_node_t node = {.index = 7, .size = 42};
@@ -34,22 +55,17 @@ main () {
     hc__db_core_write_destroy(&write);
   }
 
-  // Read it back directly via kv.
+  // Read it back directly via rocksdb.
   {
     hc_small_key_t k0;
     hc_key_core_tree(&k0, db.data_ptr, 7);
 
-    kv_read_batch_t read;
-    kv_read_batch_init(&read, db.kv, 1);
-    hc_buf_t v0 = {0};
-    assert(kv_read_batch_get(&read, k0.buf.buffer, k0.buf.len, &v0.buffer, &v0.len) == 0);
-    assert(kv_read_batch_flush(&read) == 0);
+    rocksdb_slice_t v0 = read_key(&db, k0.buf.buffer, k0.buf.len);
+    assert(v0.data != NULL);
 
-    assert(v0.buffer != NULL);
     hc_merkle_tree_node_t got = {0};
-    decode_tree_node(v0, &got);
-    free(v0.buffer);
-    kv_read_batch_destroy(&read);
+    decode_tree_node((uint8_t *) (uintptr_t) v0.data, v0.len, &got);
+    rocksdb_slice_destroy(&v0);
 
     assert(got.index == 7);
     assert(got.size == 42);
@@ -76,20 +92,15 @@ main () {
     hc_key_core_tree(&ka, db.data_ptr, 100);
     hc_key_core_tree(&kb, db.data_ptr, 200);
 
-    kv_read_batch_t read;
-    kv_read_batch_init(&read, db.kv, 2);
-    hc_buf_t va = {0}, vb = {0};
-    assert(kv_read_batch_get(&read, ka.buf.buffer, ka.buf.len, &va.buffer, &va.len) == 0);
-    assert(kv_read_batch_get(&read, kb.buf.buffer, kb.buf.len, &vb.buffer, &vb.len) == 0);
-    assert(kv_read_batch_flush(&read) == 0);
+    rocksdb_slice_t va = read_key(&db, ka.buf.buffer, ka.buf.len);
+    rocksdb_slice_t vb = read_key(&db, kb.buf.buffer, kb.buf.len);
+    assert(va.data != NULL && vb.data != NULL);
 
-    assert(va.buffer != NULL && vb.buffer != NULL);
     hc_merkle_tree_node_t got_a = {0}, got_b = {0};
-    decode_tree_node(va, &got_a);
-    decode_tree_node(vb, &got_b);
-    free(va.buffer);
-    free(vb.buffer);
-    kv_read_batch_destroy(&read);
+    decode_tree_node((uint8_t *) (uintptr_t) va.data, va.len, &got_a);
+    decode_tree_node((uint8_t *) (uintptr_t) vb.data, vb.len, &got_b);
+    rocksdb_slice_destroy(&va);
+    rocksdb_slice_destroy(&vb);
 
     assert(got_a.index == 100 && got_a.size == 1);
     assert(got_b.index == 200 && got_b.size == 2);
@@ -98,6 +109,7 @@ main () {
   }
 
   hc__db_core_destroy(&db);
-  kv_destroy(&kv);
+  hc__db_store_destroy(&store);
+  hc_test_rmdir(dir);
   return 0;
 }

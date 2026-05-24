@@ -3,13 +3,11 @@ cmake_minimum_required(VERSION 3.25)
 find_package(cmake-bare REQUIRED PATHS node_modules/cmake-bare)
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 
-project(hc C ASM)
+project(hc C CXX ASM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
-
-fetch_package("github:holepunchto/libkv")
 
 # Pinned to the `sync` branch from holepunchto/librocksdb PR #28 while the
 # synchronous API stabilises. Move back to the default ref once it merges.
@@ -229,7 +227,7 @@ target_link_libraries(
   hc
   PUBLIC
     sodium
-    kv
+    rocksdb
     lexkey
     flattree
 )
@@ -249,7 +247,7 @@ target_link_libraries(
     hc
   PRIVATE
     $<TARGET_OBJECTS:sodium>
-    $<TARGET_OBJECTS:kv>
+    rocksdb_shared
     $<TARGET_OBJECTS:compact>
     $<TARGET_OBJECTS:utf>
 )
@@ -269,10 +267,15 @@ target_link_libraries(
     hc
   PRIVATE
     $<TARGET_OBJECTS:sodium>
-    $<TARGET_OBJECTS:kv>
+    rocksdb_static
     $<TARGET_OBJECTS:compact>
     $<TARGET_OBJECTS:utf>
 )
+
+# rocksdb_static carries C++ object code; force the C++ linker so libc++
+# (and its personality routine) are pulled in.
+set_target_properties(hc_static PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(hc_shared PROPERTIES LINKER_LANGUAGE CXX)
 
 install(TARGETS hc_shared hc_static)
 

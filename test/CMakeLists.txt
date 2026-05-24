@@ -13,7 +13,6 @@ foreach(test IN LISTS tests)
     ${test}
     PRIVATE
       hc_static
-      uv_a
   )
 
   add_test(

@@ -5,8 +5,8 @@
 #include "hc/store.h"
 
 int
-hc_store_init (hc_store_t *store, const char *path) {
-  int err = hc__db_store_init(&store->db, path);
+hc_store_init (hc_store_t *store, const char *path, uv_loop_t *loop) {
+  int err = hc__db_store_init(&store->db, path, loop);
   if (err < 0) return err;
   memset(&store->head, 0, sizeof(store->head));
 
@@ -47,7 +47,7 @@ hc_store_create (hc_store_t *store, struct hc_core_s *core, const hc_hash_t key,
   if (err < 0) goto fail;
 
   hc__db_store_write_destroy(&write);
-  return hc_core_init(core, core_ptr, data_ptr, &store->db.kv, key, discovery_key);
+  return hc_core_init(core, core_ptr, data_ptr, &store->db.db, store->db.cf, key, discovery_key);
 
 fail:
   hc__db_store_write_destroy(&write);
@@ -75,7 +75,7 @@ hc_store_get (hc_store_t *store, struct hc_core_s *core, const hc_hash_t key, co
 
   if (!entry.found) return -1;
 
-  err = hc_core_init(core, entry.core_ptr, entry.data_ptr, &store->db.kv, key, discovery_key);
+  err = hc_core_init(core, entry.core_ptr, entry.data_ptr, &store->db.db, store->db.cf, key, discovery_key);
   if (err < 0) return err;
   return hc_core_load(core);
 }
