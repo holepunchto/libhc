@@ -46,7 +46,16 @@ hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, con
     if (err < 0) return err;
   }
 
-  err = hc__db_core_write_head(write, upgrade->core->fork, upgrade->length);
+  hc_head_t head = {
+    .fork = upgrade->core->fork,
+    .length = upgrade->length,
+    .signature = {0, NULL},
+    .timestamp = 0,
+  };
+  // TODO: compute root_hash from upgrade->roots once the tree-hash construct is wired up.
+  memset(head.root_hash, 0, sizeof(head.root_hash));
+
+  err = hc__db_core_write_head(write, &head);
   if (err < 0) return err;
 
   return hc__db_core_write_flush(write);
@@ -101,10 +110,15 @@ hc_core_load (hc_core_t *core) {
 
   if (head_val == NULL) return 0;
 
+  hc_head_t head = {0};
   compact_state_t vs = {0, head_val_len, head_val};
-  err = hc_core_data_head_decode(&vs, &core->fork, &core->length);
+  err = hc_head_decode(&vs, &head);
   free(head_val);
   if (err < 0) return err;
+
+  core->fork = head.fork;
+  core->length = head.length;
+  hc_head_destroy(&head);
 
   if (core->length == 0) return 0;
 

@@ -54,7 +54,7 @@ typedef struct {
 typedef struct {
   hc_small_key_t key;
   hc_buf_t value;
-  uint8_t value_data[HC_CORE_DATA_HEAD_MAX_SIZE];
+  uint8_t value_data[HC_HEAD_MAX_SIZE];
 } hc__db_core_head_kv_t;
 
 typedef struct hc__db_core_write_s hc__db_core_write_t;
@@ -141,10 +141,10 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
 }
 
 static inline int
-hc__db_core_write_head (hc__db_core_write_t *write, uint64_t fork, uint64_t length) {
+hc__db_core_write_head (hc__db_core_write_t *write, const hc_head_t *head) {
   hc_key_core_head(&write->head.key, write->db->data_ptr);
   compact_state_t state = {0, sizeof(write->head.value_data), write->head.value_data};
-  hc_core_data_head_encode(&state, fork, length);
+  hc_head_encode(&state, head);
   write->head.value.buffer = write->head.value_data;
   write->head.value.len = state.start;
   write->has_head = 1;
