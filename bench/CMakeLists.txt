@@ -1,5 +1,6 @@
 list(APPEND benches
   append
+  append_batched
 )
 
 foreach(bench IN LISTS benches)
