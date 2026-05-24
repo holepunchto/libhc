@@ -3,6 +3,23 @@
 
 #include "hc/keys.h"
 
+void
+hc_key_store_head (hc_small_key_t *key) {
+  compact_state_t state = {0, sizeof(key->data), key->data};
+  lexkey_encode_uint(&state, HC_KEY_TL_HEAD);
+  key->buf.buffer = key->data;
+  key->buf.len = state.start;
+}
+
+void
+hc_key_store_core (hc_small_key_t *key, const hc_hash_t discovery_key) {
+  compact_state_t state = {0, sizeof(key->data), key->data};
+  lexkey_encode_uint(&state, HC_KEY_TL_CORE_BY_DKEY);
+  compact_encode_fixed32(&state, discovery_key);
+  key->buf.buffer = key->data;
+  key->buf.len = state.start;
+}
+
 static void
 encode_tl_ptr (hc_small_key_t *key, uint64_t tl, uint64_t ptr) {
   compact_state_t state = {0, sizeof(key->data), key->data};

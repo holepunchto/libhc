@@ -3,9 +3,8 @@
 
 #include <stdint.h>
 
-#include <kv.h>
-
 #include "crypto.h"
+#include "db.h"
 
 struct hc_core_s;
 
@@ -14,17 +13,7 @@ extern "C" {
 #endif
 
 typedef struct {
-  uint64_t cores;
-  uint64_t datas;
-  uint64_t groups;
-  uint8_t has_seed;
-  hc_hash_t seed;
-  uint8_t has_default_discovery_key;
-  hc_hash_t default_discovery_key;
-} hc_store_head_t;
-
-typedef struct {
-  kv_t kv;
+  hc__db_store_t db;
   hc_store_head_t head;
 } hc_store_t;
 

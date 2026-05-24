@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "buffer.h"
+#include "crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,9 +34,11 @@ extern "C" {
 
 // Carrier for stack-allocated keys with inline backing storage. Pass
 // &small_key->buf (or the equivalent (hc_buf_t *) cast) to any hc_buf_t API.
+// Size of 64 is enough for any of the lexkey-encoded keys we generate,
+// including store-level keys that carry a 32-byte discovery key.
 typedef struct {
   hc_buf_t buf;
-  uint8_t data[32];
+  uint8_t data[64];
 } hc_small_key_t;
 
 typedef struct {
@@ -47,6 +50,12 @@ typedef struct {
 // All encoders use lexkey UINTs (order-preserving big-endian) so encoded
 // keys sort lexicographically in the same order as the logical (tl, ptr,
 // subtype, index) tuple.
+
+void
+hc_key_store_head (hc_small_key_t *key);
+
+void
+hc_key_store_core (hc_small_key_t *key, const hc_hash_t discovery_key);
 
 void
 hc_key_core_core (hc_small_key_t *key, uint64_t core_ptr);

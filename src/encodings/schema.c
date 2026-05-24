@@ -5,6 +5,7 @@
 #include <compact.h>
 
 #include "hc/schema.h"
+#include "hc/store.h"
 
 #define HC_MANIFEST_PATCH     0x01
 #define HC_MANIFEST_PROLOGUE  0x02
@@ -284,7 +285,7 @@ hc_manifest_encode (compact_state_t *state, const hc_manifest_t *m) {
 }
 
 int
-hc_store_head_preencode (compact_state_t *state, const hc_store_head_t *h) {
+hc_store_head_preencode (compact_state_t *state, const struct hc_store_head_s *h) {
   compact_preencode_uint(state, 2);
   compact_preencode_uint(state, h->cores);
   compact_preencode_uint(state, h->datas);
@@ -299,7 +300,7 @@ hc_store_head_preencode (compact_state_t *state, const hc_store_head_t *h) {
 }
 
 int
-hc_store_head_encode (compact_state_t *state, const hc_store_head_t *h) {
+hc_store_head_encode (compact_state_t *state, const struct hc_store_head_s *h) {
   compact_encode_uint(state, 2);
   compact_encode_uint(state, h->cores);
   compact_encode_uint(state, h->datas);
@@ -314,7 +315,7 @@ hc_store_head_encode (compact_state_t *state, const hc_store_head_t *h) {
 }
 
 int
-hc_store_head_decode (compact_state_t *state, hc_store_head_t *h) {
+hc_store_head_decode (compact_state_t *state, struct hc_store_head_s *h) {
   uintmax_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;
   if (version > 2) return -1;
