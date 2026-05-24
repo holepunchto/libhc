@@ -60,6 +60,12 @@ hc_manifest_destroy (hc_manifest_t *manifest) {
   manifest->user_data.len = 0;
 }
 
+// Initialise a v1 single-signer ed25519 manifest using the keypair's public
+// key and the default namespace. Heap-allocates the signers array; caller
+// must call hc_manifest_destroy.
+int
+hc_manifest_init_default (hc_manifest_t *manifest, const hc_crypto_keypair_t *keypair);
+
 #ifdef __cplusplus
 }
 #endif

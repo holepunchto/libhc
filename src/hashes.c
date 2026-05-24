@@ -55,6 +55,32 @@ hc_hashes_tree_signable (uint8_t out[112], const hc_hashes_t *hashes, const hc_h
 }
 
 int
+hc_manifest_init_default (hc_manifest_t *manifest, const hc_crypto_keypair_t *keypair) {
+  hc_hashes_t hashes;
+  hc_hashes_init(&hashes);
+
+  hc__array_init(&manifest->signers);
+  if (hc__array_grow(&manifest->signers, 1) < 0) return -1;
+
+  hc_signer_t *signer = &manifest->signers.buffers[0];
+  signer->signature = HC_SIGNATURE_FUNC_ED25519;
+  memcpy(signer->namespace, hashes.default_namespace, sizeof(hc_hash_t));
+  memcpy(signer->public_key, keypair->public_key, HC_CRYPTO_KEY_SIZE);
+  manifest->signers.length = 1;
+
+  manifest->version = 1;
+  manifest->hash = HC_HASH_FUNC_BLAKE2B;
+  manifest->allow_patch = false;
+  manifest->quorum = 1;
+  manifest->prologue = NULL;
+  hc__array_init(&manifest->linked);
+  manifest->user_data.buffer = NULL;
+  manifest->user_data.len = 0;
+
+  return 0;
+}
+
+int
 hc_hashes_manifest (hc_hash_t out, const hc_manifest_t *manifest) {
   compact_state_t state = {0, 0, NULL};
   if (hc_manifest_preencode(&state, manifest) < 0) return -1;
