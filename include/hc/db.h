@@ -47,21 +47,54 @@ struct hc__db_s {
 };
 
 // Opens the rocksdb at `path` synchronously and stashes a handle to the
-// default column family. `loop` is used by librocksdb's worker machinery;
-// in sync mode (cb == NULL) it isn't actually serviced but is still
-// required by the API.
+// `corestore` column family — same name and tuning as the JS
+// hypercore-storage uses, so on-disk layout is interoperable.
+//
+// `loop` is used by librocksdb's worker machinery; in sync mode (cb ==
+// NULL) it isn't actually serviced but is still required by the API.
 static inline int
 hc__db_init (hc__db_t *db, const char *path, uv_loop_t *loop) {
   if (path == NULL) return -1;
 
-  rocksdb_options_t opts = { .create_if_missing = true };
-  rocksdb_column_family_descriptor_t desc = rocksdb_column_family_descriptor("default", NULL);
+  rocksdb_options_t opts = {
+    .create_if_missing = true,
+    .create_missing_column_families = true,
+  };
+
+  // Mirror hypercore-storage/lib/index.js createColumnFamily: blob files
+  // for large values, 8KB table blocks, index/filter blocks cached.
+  rocksdb_column_family_options_t cf_opts = {
+    .version = 5,
+    .compaction_style = rocksdb_level_compaction,
+    .enable_blob_files = true,
+    .min_blob_size = 4096,
+    .blob_file_size = 256ULL * 1024 * 1024,
+    .enable_blob_garbage_collection = true,
+    .block_size = 8 * 1024,
+    .cache_index_and_filter_blocks = true,
+    .format_version = 6,
+  };
+
+  rocksdb_column_family_descriptor_t descs[2] = {
+    rocksdb_column_family_descriptor("default", NULL),
+    rocksdb_column_family_descriptor("corestore", &cf_opts),
+  };
+  rocksdb_column_family_t *handles[2] = {NULL, NULL};
 
   rocksdb_open_t req;
-  int rc = rocksdb_open(loop, &db->rocks, &req, path, &opts, &desc, &db->cf, 1, NULL, NULL);
+  int rc = rocksdb_open(loop, &db->rocks, &req, path, &opts, descs, handles, 2, NULL, NULL);
   int err = (rc < 0 || req.error != NULL) ? -1 : 0;
   rocksdb_open_cleanup(&req);
-  return err;
+  if (err < 0) return err;
+
+  // We only operate on the corestore CF. The default CF must be opened
+  // (rocksdb requires every existing CF to appear in the descriptor
+  // list), but we don't use it — destroy the handle right away.
+  // rocksdb_column_family_destroy frees the handle, not the data.
+  rocksdb_column_family_destroy(&db->rocks, handles[0]);
+  db->cf = handles[1];
+
+  return 0;
 }
 
 static inline void
