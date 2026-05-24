@@ -5,6 +5,7 @@
 
 #include <compact.h>
 
+#include "hc/caps.h"
 #include "hc/schema.h"
 
 // Expected bytes produced by the JS hypercore messages.manifest codec for this

@@ -60,11 +60,6 @@ hc_manifest_destroy (hc_manifest_t *manifest) {
   manifest->user_data.len = 0;
 }
 
-// Hash a manifest for identity/signing purposes. Binary-compatible with the JS
-// hypercore manifestHash() function.
-int
-hc_manifest_hash (hc_hash_t out, const hc_manifest_t *manifest);
-
 #ifdef __cplusplus
 }
 #endif
