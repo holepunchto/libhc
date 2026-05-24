@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "hc/buffer.h"
 #include "hc/core.h"
 #include "hc/store.h"
 
@@ -53,6 +54,36 @@ main () {
   hc_hash_t unknown_dkey = {0};
   memset(unknown_dkey, 0xff, sizeof(unknown_dkey));
   assert(hc_store_get(&store, &got, key, unknown_dkey) < 0);
+
+  // Create a core, append a block, close it, reopen and verify state, append again.
+  {
+    hc_hash_t key3 = {0};
+    hc_hash_t discovery_key3 = {0};
+    memset(key3, 0x11, sizeof(key3));
+    memset(discovery_key3, 0x22, sizeof(discovery_key3));
+
+    uint8_t block_data[64];
+    memset(block_data, 0xcd, sizeof(block_data));
+    hc_buf_t block = {.len = sizeof(block_data), .buffer = block_data};
+
+    hc_core_t c3;
+    assert(hc_store_create(&store, &c3, key3, discovery_key3) == 0);
+    assert(hc_core_append(&c3, &block, 1) == 0);
+    assert(c3.length == 1);
+    assert(c3.byte_length == sizeof(block_data));
+    hc_core_destroy(&c3);
+
+    hc_core_t c3b;
+    assert(hc_store_get(&store, &c3b, key3, discovery_key3) == 0);
+    assert(c3b.length == 1);
+    assert(c3b.byte_length == sizeof(block_data));
+    assert(c3b.roots.length == 1);
+
+    assert(hc_core_append(&c3b, &block, 1) == 0);
+    assert(c3b.length == 2);
+    assert(c3b.byte_length == 2 * sizeof(block_data));
+    hc_core_destroy(&c3b);
+  }
 
   hc_store_destroy(&store);
   return 0;

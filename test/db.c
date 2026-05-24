@@ -16,8 +16,11 @@ decode_tree_node (hc_buf_t value, hc_merkle_tree_node_t *out) {
 
 int
 main () {
+  kv_t kv;
+  kv_init(&kv);
+
   hc__db_core_t db;
-  assert(hc__db_core_init(&db, 0, 0) == 0);
+  assert(hc__db_core_init(&db, 0, 0, &kv) == 0);
 
   // Write a single tree node via hc__db_core_write_t.
   hc_merkle_tree_node_t node = {.index = 7, .size = 42};
@@ -37,7 +40,7 @@ main () {
     hc_key_core_tree(&k0, db.data_ptr, 7);
 
     kv_read_batch_t read;
-    kv_read_batch_init(&read, &db.kv, 1);
+    kv_read_batch_init(&read, db.kv, 1);
     hc_buf_t v0 = {0};
     assert(kv_read_batch_get(&read, k0.buf.buffer, k0.buf.len, &v0.buffer, &v0.len) == 0);
     assert(kv_read_batch_flush(&read) == 0);
@@ -74,7 +77,7 @@ main () {
     hc_key_core_tree(&kb, db.data_ptr, 200);
 
     kv_read_batch_t read;
-    kv_read_batch_init(&read, &db.kv, 2);
+    kv_read_batch_init(&read, db.kv, 2);
     hc_buf_t va = {0}, vb = {0};
     assert(kv_read_batch_get(&read, ka.buf.buffer, ka.buf.len, &va.buffer, &va.len) == 0);
     assert(kv_read_batch_get(&read, kb.buf.buffer, kb.buf.len, &vb.buffer, &vb.len) == 0);
@@ -95,5 +98,6 @@ main () {
   }
 
   hc__db_core_destroy(&db);
+  kv_destroy(&kv);
   return 0;
 }

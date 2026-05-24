@@ -19,14 +19,14 @@ extern "C" {
 typedef struct hc__db_core_s hc__db_core_t;
 
 struct hc__db_core_s {
-  kv_t kv;
+  kv_t *kv;
   uint64_t core_ptr;
   uint64_t data_ptr;
 };
 
 static inline int
-hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr) {
-  kv_init(&db->kv);
+hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr, kv_t *kv) {
+  db->kv = kv;
   db->core_ptr = core_ptr;
   db->data_ptr = data_ptr;
   return 0;
@@ -34,7 +34,7 @@ hc__db_core_init (hc__db_core_t *db, uint64_t core_ptr, uint64_t data_ptr) {
 
 static inline void
 hc__db_core_destroy (hc__db_core_t *db) {
-  kv_destroy(&db->kv);
+  (void) db;
 }
 
 // Stack-allocatable key+value pair for a tree-node kv record.
@@ -51,12 +51,20 @@ typedef struct {
   hc_buf_t value;
 } hc__db_block_kv_t;
 
+typedef struct {
+  hc_small_key_t key;
+  hc_buf_t value;
+  uint8_t value_data[HC_CORE_DATA_HEAD_MAX_SIZE];
+} hc__db_core_head_kv_t;
+
 typedef struct hc__db_core_write_s hc__db_core_write_t;
 struct hc__db_core_write_s {
   hc__db_core_t *db;
   HC__ARRAY(hc__db_tree_node_kv_t) tree_nodes;
   HC__ARRAY(hc__db_block_kv_t) blocks;
   HC__ARRAY(hc_small_key_t) deletes;
+  hc__db_core_head_kv_t head;
+  uint8_t has_head;
 };
 
 static inline void
@@ -65,6 +73,7 @@ hc__db_core_write_init (hc__db_core_write_t *write, hc__db_core_t *db) {
   hc__array_init(&write->tree_nodes);
   hc__array_init(&write->blocks);
   hc__array_init(&write->deletes);
+  write->has_head = 0;
 }
 
 static inline int
@@ -92,7 +101,7 @@ hc__db_core_write_destroy (hc__db_core_write_t *write) {
 static inline int
 hc__db_core_write_flush (hc__db_core_write_t *write) {
   kv_write_batch_t kv_batch;
-  kv_write_batch_init(&kv_batch, &write->db->kv, write->tree_nodes.length + write->blocks.length + write->deletes.length);
+  kv_write_batch_init(&kv_batch, write->db->kv, write->tree_nodes.length + write->blocks.length + write->deletes.length + (write->has_head ? 1 : 0));
 
   for (size_t i = 0; i < write->tree_nodes.length; i++) {
     hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[i];
@@ -118,9 +127,28 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     }
   }
 
+  if (write->has_head) {
+    hc__db_core_head_kv_t *kv = &write->head;
+    if (kv_write_batch_put(&kv_batch, kv->key.buf.buffer, kv->key.buf.len, kv->value.buffer, kv->value.len) < 0) {
+      kv_write_batch_destroy(&kv_batch);
+      return -1;
+    }
+  }
+
   int err = kv_write_batch_flush(&kv_batch);
   kv_write_batch_destroy(&kv_batch);
   return err;
+}
+
+static inline int
+hc__db_core_write_head (hc__db_core_write_t *write, uint64_t fork, uint64_t length) {
+  hc_key_core_head(&write->head.key, write->db->data_ptr);
+  compact_state_t state = {0, sizeof(write->head.value_data), write->head.value_data};
+  hc_core_data_head_encode(&state, fork, length);
+  write->head.value.buffer = write->head.value_data;
+  write->head.value.len = state.start;
+  write->has_head = 1;
+  return 0;
 }
 
 static inline int
@@ -207,7 +235,7 @@ hc__db_core_read_destroy (hc__db_core_read_t *read) {
 static inline int
 hc__db_core_read_flush (hc__db_core_read_t *read) {
   kv_read_batch_t kv_batch;
-  kv_read_batch_init(&kv_batch, &read->db->kv, read->small_reads.length);
+  kv_read_batch_init(&kv_batch, read->db->kv, read->small_reads.length);
 
   for (size_t i = 0; i < read->small_reads.length; i++) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];

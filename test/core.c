@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <flattree.h>
+#include <kv.h>
 
 #include "hc/core.h"
 
@@ -9,8 +10,11 @@
 
 int
 main () {
+  kv_t kv;
+  kv_init(&kv);
+
   hc_core_t core;
-  assert(hc_core_init(&core, 0, 0, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
+  assert(hc_core_init(&core, 0, 0, &kv, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
 
   uint8_t block_data[64];
   memset(block_data, 0xcd, sizeof(block_data));
@@ -36,5 +40,6 @@ main () {
   assert(roots_byte_length == core.byte_length);
 
   hc_core_destroy(&core);
+  kv_destroy(&kv);
   return 0;
 }

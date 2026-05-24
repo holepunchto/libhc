@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <kv.h>
+
 #include "hc/core.h"
 
 #define N 100000
@@ -16,8 +18,11 @@ now_ns () {
 
 int
 main () {
+  kv_t kv;
+  kv_init(&kv);
+
   hc_core_t core;
-  assert(hc_core_init(&core, 0, 0, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
+  assert(hc_core_init(&core, 0, 0, &kv, (const uint8_t[32]){0}, (const uint8_t[32]){0}) == 0);
 
   uint8_t block_data[1024];
   memset(block_data, 0xcd, sizeof(block_data));
@@ -37,5 +42,6 @@ main () {
   printf("appended %d blocks in %.2f ms (%.2f us/block)\n", N, elapsed_ms, per_block_us);
 
   hc_core_destroy(&core);
+  kv_destroy(&kv);
   return 0;
 }

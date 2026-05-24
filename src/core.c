@@ -1,17 +1,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <flattree.h>
+
 #include "hc/core.h"
 #include "hc/db.h"
 #include "hc/merkle_tree.h"
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_hash_t key, const hc_hash_t discovery_key) {
-  hc__db_core_init(&core->db, core_ptr, data_ptr);
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, kv_t *kv, const hc_hash_t key, const hc_hash_t discovery_key) {
+  hc__db_core_init(&core->db, core_ptr, data_ptr, kv);
   memcpy(core->key, key, sizeof(hc_hash_t));
   memcpy(core->discovery_key, discovery_key, sizeof(hc_hash_t));
   core->manifest = NULL;
   hc__array_init(&core->roots);
+  core->fork = 0;
   core->length = 0;
   core->byte_length = 0;
   return 0;
@@ -43,6 +46,9 @@ hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, con
     if (err < 0) return err;
   }
 
+  err = hc__db_core_write_head(write, upgrade->core->fork, upgrade->length);
+  if (err < 0) return err;
+
   return hc__db_core_write_flush(write);
 }
 
@@ -67,6 +73,68 @@ int
 hc_core_checkout (hc_core_t *core, uint64_t length) {
   // TODO: load roots for `length` from storage and recompute byte_length.
   core->length = length;
+  return 0;
+}
+
+int
+hc_core_load (hc_core_t *core) {
+  hc_small_key_t head_key;
+  hc_key_core_head(&head_key, core->db.data_ptr);
+
+  kv_read_batch_t read;
+  kv_read_batch_init(&read, core->db.kv, 1);
+
+  uint8_t *head_val = NULL;
+  size_t head_val_len = 0;
+
+  int err = 0;
+
+  err = kv_read_batch_get(&read, head_key.buf.buffer, head_key.buf.len, &head_val, &head_val_len);
+  if (err < 0) {
+    kv_read_batch_destroy(&read);
+    return err;
+  }
+
+  err = kv_read_batch_flush(&read);
+  kv_read_batch_destroy(&read);
+  if (err < 0) return err;
+
+  if (head_val == NULL) return 0;
+
+  compact_state_t vs = {0, head_val_len, head_val};
+  err = hc_core_data_head_decode(&vs, &core->fork, &core->length);
+  free(head_val);
+  if (err < 0) return err;
+
+  if (core->length == 0) return 0;
+
+  uint64_t root_indices[64];
+  int nroots = flat_tree_full_roots(core->length * 2, root_indices);
+  if (nroots < 0) return -1;
+
+  if (hc__array_grow(&core->roots, (size_t) nroots) < 0) return -1;
+
+  hc__db_core_read_t db_read;
+  hc__db_core_read_init(&db_read, &core->db);
+
+  for (int i = 0; i < nroots; i++) {
+    if (hc__db_core_read_get_tree_node(&db_read, root_indices[i], &core->roots.buffers[i]) < 0) {
+      hc__db_core_read_destroy(&db_read);
+      return -1;
+    }
+  }
+
+  err = hc__db_core_read_flush(&db_read);
+  hc__db_core_read_destroy(&db_read);
+  if (err < 0) return err;
+
+  core->roots.length = (size_t) nroots;
+
+  core->byte_length = 0;
+  for (int i = 0; i < nroots; i++) {
+    core->byte_length += core->roots.buffers[i].size;
+  }
+
   return 0;
 }
 

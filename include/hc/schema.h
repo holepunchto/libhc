@@ -47,6 +47,15 @@ hc_store_core_encode (compact_state_t *state, uint64_t core_ptr, uint64_t data_p
 int
 hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data_ptr);
 
+#define HC_CORE_DATA_HEAD_MAX_SIZE 20
+
+int
+hc_core_data_head_preencode (compact_state_t *state, uint64_t fork, uint64_t length);
+int
+hc_core_data_head_encode (compact_state_t *state, uint64_t fork, uint64_t length);
+int
+hc_core_data_head_decode (compact_state_t *state, uint64_t *fork, uint64_t *length);
+
 #ifdef __cplusplus
 }
 #endif

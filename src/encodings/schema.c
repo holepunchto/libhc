@@ -354,6 +354,30 @@ hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data
 }
 
 int
+hc_core_data_head_preencode (compact_state_t *state, uint64_t fork, uint64_t length) {
+  compact_preencode_uint(state, fork);
+  compact_preencode_uint(state, length);
+  return 0;
+}
+
+int
+hc_core_data_head_encode (compact_state_t *state, uint64_t fork, uint64_t length) {
+  compact_encode_uint(state, fork);
+  compact_encode_uint(state, length);
+  return 0;
+}
+
+int
+hc_core_data_head_decode (compact_state_t *state, uint64_t *fork, uint64_t *length) {
+  uintmax_t f, l;
+  if (compact_decode_uint(state, &f) < 0) return -1;
+  if (compact_decode_uint(state, &l) < 0) return -1;
+  *fork = (uint64_t) f;
+  *length = (uint64_t) l;
+  return 0;
+}
+
+int
 hc_manifest_decode (compact_state_t *state, hc_manifest_t *m) {
   uintmax_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;

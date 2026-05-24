@@ -125,7 +125,7 @@ hc_store_create (hc_store_t *store, struct hc_core_s *core, const hc_hash_t key,
     return err;
   }
 
-  return hc_core_init(core, core_ptr, data_ptr, key, discovery_key);
+  return hc_core_init(core, core_ptr, data_ptr, &store->kv, key, discovery_key);
 }
 
 int
@@ -158,5 +158,7 @@ hc_store_get (hc_store_t *store, struct hc_core_s *core, const hc_hash_t key, co
   free(val);
   if (err < 0) return err;
 
-  return hc_core_init(core, core_ptr, data_ptr, key, discovery_key);
+  err = hc_core_init(core, core_ptr, data_ptr, &store->kv, key, discovery_key);
+  if (err < 0) return err;
+  return hc_core_load(core);
 }

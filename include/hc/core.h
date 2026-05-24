@@ -21,12 +21,13 @@ struct hc_core_s {
   hc_hash_t discovery_key;
   hc_manifest_t *manifest;
   hc_merkle_tree_node_array_t roots;
+  uint64_t fork;
   uint64_t length;
   uint64_t byte_length;
 };
 
 int
-hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, const hc_hash_t key, const hc_hash_t discovery_key);
+hc_core_init (hc_core_t *core, uint64_t core_ptr, uint64_t data_ptr, kv_t *kv, const hc_hash_t key, const hc_hash_t discovery_key);
 
 void
 hc_core_destroy (hc_core_t *core);
@@ -38,6 +39,9 @@ hc_core_append (hc_core_t *core, const hc_buf_t *buffers, size_t count);
 // storage and recomputes byte_length. Stubbed for now.
 int
 hc_core_checkout (hc_core_t *core, uint64_t length);
+
+int
+hc_core_load (hc_core_t *core);
 
 typedef struct hc_core_upgrade_s hc_core_upgrade_t;
 
