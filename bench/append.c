@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 #include <uv.h>
 
@@ -13,9 +12,9 @@
 
 static uint64_t
 now_ns () {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (uint64_t) ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+  uv_timespec64_t ts;
+  uv_clock_gettime(UV_CLOCK_MONOTONIC, &ts);
+  return (uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec;
 }
 
 int
