@@ -6,6 +6,7 @@
 #include "head.h"
 #include "manifest.h"
 #include "merkle_tree.h"
+#include "store.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,13 @@ int
 hc_manifest_encode (compact_state_t *state, const hc_manifest_t *manifest);
 int
 hc_manifest_decode (compact_state_t *state, hc_manifest_t *manifest);
+
+int
+hc_store_head_preencode (compact_state_t *state, const hc_store_head_t *head);
+int
+hc_store_head_encode (compact_state_t *state, const hc_store_head_t *head);
+int
+hc_store_head_decode (compact_state_t *state, hc_store_head_t *head);
 
 #ifdef __cplusplus
 }

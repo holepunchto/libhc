@@ -10,6 +10,9 @@
 #define HC_MANIFEST_LINKED    0x04
 #define HC_MANIFEST_USER_DATA 0x08
 
+#define HC_STORE_HEAD_SEED                   0x01
+#define HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY  0x02
+
 int
 hc_tree_node_preencode (compact_state_t *state, const hc_merkle_tree_node_t *node) {
   compact_preencode_uint(state, node->index);
@@ -244,6 +247,78 @@ hc_manifest_encode (compact_state_t *state, const hc_manifest_t *m) {
   if (m->user_data.buffer) {
     compact_encode_uint8array(state, m->user_data.buffer, m->user_data.len);
   }
+  return 0;
+}
+
+int
+hc_store_head_preencode (compact_state_t *state, const hc_store_head_t *h) {
+  compact_preencode_uint(state, 2);
+  compact_preencode_uint(state, h->cores);
+  compact_preencode_uint(state, h->datas);
+  compact_preencode_uint(state, h->groups);
+  uint8_t flags = 0;
+  if (h->has_seed) flags |= HC_STORE_HEAD_SEED;
+  if (h->has_default_discovery_key) flags |= HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY;
+  compact_preencode_uint(state, (uintmax_t) flags);
+  if (h->has_seed) compact_preencode_fixed32(state, h->seed);
+  if (h->has_default_discovery_key) compact_preencode_fixed32(state, h->default_discovery_key);
+  return 0;
+}
+
+int
+hc_store_head_encode (compact_state_t *state, const hc_store_head_t *h) {
+  compact_encode_uint(state, 2);
+  compact_encode_uint(state, h->cores);
+  compact_encode_uint(state, h->datas);
+  compact_encode_uint(state, h->groups);
+  uint8_t flags = 0;
+  if (h->has_seed) flags |= HC_STORE_HEAD_SEED;
+  if (h->has_default_discovery_key) flags |= HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY;
+  compact_encode_uint(state, (uintmax_t) flags);
+  if (h->has_seed) compact_encode_fixed32(state, h->seed);
+  if (h->has_default_discovery_key) compact_encode_fixed32(state, h->default_discovery_key);
+  return 0;
+}
+
+int
+hc_store_head_decode (compact_state_t *state, hc_store_head_t *h) {
+  uintmax_t version;
+  if (compact_decode_uint(state, &version) < 0) return -1;
+  if (version > 2) return -1;
+
+  if (version == 1) {
+    uintmax_t flags;
+    if (compact_decode_uint(state, &flags) < 0) return -1;
+    h->groups = 0;
+    if (flags & 0x01) {
+      uintmax_t cores, datas;
+      if (compact_decode_uint(state, &cores) < 0) return -1;
+      if (compact_decode_uint(state, &datas) < 0) return -1;
+      h->cores = (uint64_t) cores;
+      h->datas = (uint64_t) datas;
+    } else {
+      h->cores = 0;
+      h->datas = 0;
+    }
+    h->has_seed = (flags & 0x02) != 0;
+    if (h->has_seed && compact_decode_fixed32(state, h->seed) < 0) return -1;
+    h->has_default_discovery_key = (flags & 0x04) != 0;
+    if (h->has_default_discovery_key && compact_decode_fixed32(state, h->default_discovery_key) < 0) return -1;
+    return 0;
+  }
+
+  uintmax_t cores, datas, groups, flags;
+  if (compact_decode_uint(state, &cores) < 0) return -1;
+  if (compact_decode_uint(state, &datas) < 0) return -1;
+  if (compact_decode_uint(state, &groups) < 0) return -1;
+  if (compact_decode_uint(state, &flags) < 0) return -1;
+  h->cores = (uint64_t) cores;
+  h->datas = (uint64_t) datas;
+  h->groups = (uint64_t) groups;
+  h->has_seed = (flags & HC_STORE_HEAD_SEED) != 0;
+  if (h->has_seed && compact_decode_fixed32(state, h->seed) < 0) return -1;
+  h->has_default_discovery_key = (flags & HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY) != 0;
+  if (h->has_default_discovery_key && compact_decode_fixed32(state, h->default_discovery_key) < 0) return -1;
   return 0;
 }
 
