@@ -28,7 +28,7 @@ static const uint8_t expected[] = {
 
 int
 main () {
-  assert(hc_init() == 0);
+  assert(hc_init() >= 0);
 
   hc_signer_t signer = {
     .signature = HC_SIGNATURE_FUNC_ED25519,

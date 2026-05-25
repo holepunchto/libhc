@@ -16,10 +16,10 @@
 extern "C" {
 #endif
 
-// Initialise process-global state used by libhc. Currently this just
-// runs sodium_init; idempotent and cheap to call multiple times. Should
-// be called once before any other libhc function. Returns 0 on success,
-// < 0 on failure.
+// Initialise process-global state used by libhc (sodium_init, namespace
+// hashes). Should be called once before any other libhc function.
+// Returns 0 on success, 1 if already initialised, -1 on failure
+// (mirroring sodium_init).
 int
 hc_init (void);
 
