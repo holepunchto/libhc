@@ -5,6 +5,7 @@
 
 #include <compact.h>
 
+#include "hc.h"
 #include "hc/hashes.h"
 #include "hc/schema.h"
 
@@ -27,6 +28,8 @@ static const uint8_t expected[] = {
 
 int
 main () {
+  assert(hc_init() == 0);
+
   hc_signer_t signer = {
     .signature = HC_SIGNATURE_FUNC_ED25519,
     .namespace = {65, 68, 238, 165, 49, 228, 131, 213, 78, 12, 20, 244, 202, 104, 224, 100, 79, 53, 83, 67, 255, 111, 203, 15, 0, 82, 0, 225, 44, 215, 71, 203},

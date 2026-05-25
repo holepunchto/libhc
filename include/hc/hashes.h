@@ -19,15 +19,22 @@ typedef struct {
   hc_hash_t default_encryption;
 } hc_hashes_t;
 
+// Initialise the process-global namespace hashes. Called by hc_init;
+// safe to call multiple times. Not part of the public API — use hc_init.
 void
-hc_hashes_init (hc_hashes_t *hashes);
+hc__hashes_init (void);
+
+// Returns a pointer to the process-global namespace hashes. Stable for
+// the lifetime of the process. Must be called after hc_init.
+const hc_hashes_t *
+hc_hashes (void);
 
 void
-hc_hashes_replicate (hc_hash_t out, const hc_hashes_t *hashes, int is_initiator, const hc_hash_t key, const hc_hash_t handshake_hash);
+hc_hashes_replicate (hc_hash_t out, int is_initiator, const hc_hash_t key, const hc_hash_t handshake_hash);
 
 // Writes 112 bytes: tree(32) || manifest_hash(32) || tree_hash(32) || length(8 LE) || fork(8 LE)
 void
-hc_hashes_tree_signable (uint8_t out[112], const hc_hashes_t *hashes, const hc_hash_t manifest_hash, const hc_hash_t tree_hash, uint64_t length, uint64_t fork);
+hc_hashes_tree_signable (uint8_t out[112], const hc_hash_t manifest_hash, const hc_hash_t tree_hash, uint64_t length, uint64_t fork);
 
 int
 hc_hashes_manifest (hc_hash_t out, const hc_manifest_t *manifest);
