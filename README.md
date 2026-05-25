@@ -15,6 +15,7 @@ See `include/hc.h` and the sub-headers it includes.
 
 #include <uv.h>
 
+#include "hc.h"
 #include "hc/core.h"
 #include "hc/crypto.h"
 #include "hc/hashes.h"
@@ -23,6 +24,8 @@ See `include/hc.h` and the sub-headers it includes.
 
 int
 main () {
+  hc_init();
+
   hc_store_t store;
   hc_store_init(&store, "/tmp/libhc-hello", uv_default_loop());
 

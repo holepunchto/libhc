@@ -207,6 +207,7 @@ target_sources(
     include/hc/merkle_tree.h
     include/hc/schema.h
   PRIVATE
+    src/init.c
     src/hashes.c
     src/core.c
     src/store.c
