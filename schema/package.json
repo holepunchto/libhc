@@ -1,0 +1,12 @@
+{
+  "name": "@libhc/schema",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "hyperschema": "^1.20.1",
+    "hyperschema-c": "^0.3.0"
+  }
+}

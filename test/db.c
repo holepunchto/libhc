@@ -11,7 +11,7 @@
 
 
 static void
-decode_tree_node (uint8_t *data, size_t len, hc_merkle_tree_node_t *out) {
+decode_tree_node (uint8_t *data, size_t len, hc_tree_node_t *out) {
   compact_state_t s = {0, len, data};
   hc_tree_node_decode(&s, out);
 }
@@ -44,7 +44,7 @@ main () {
   assert(hc__db_core_init(&db, 0, 0, &store) == 0);
 
   // Write a single tree node via hc__db_core_write_t.
-  hc_merkle_tree_node_t node = {.index = 7, .size = 42};
+  hc_tree_node_t node = {.index = 7, .size = 42};
   memset(node.hash, 0xab, sizeof(node.hash));
 
   {
@@ -63,7 +63,7 @@ main () {
     rocksdb_slice_t v0 = read_key(&db, k0.buf.buffer, k0.buf.len);
     assert(v0.data != NULL);
 
-    hc_merkle_tree_node_t got = {0};
+    hc_tree_node_t got = {0};
     decode_tree_node((uint8_t *) (uintptr_t) v0.data, v0.len, &got);
     rocksdb_slice_destroy(&v0);
 
@@ -73,8 +73,8 @@ main () {
   }
 
   // Write multiple tree nodes in one batch.
-  hc_merkle_tree_node_t a = {.index = 100, .size = 1};
-  hc_merkle_tree_node_t b = {.index = 200, .size = 2};
+  hc_tree_node_t a = {.index = 100, .size = 1};
+  hc_tree_node_t b = {.index = 200, .size = 2};
   memset(a.hash, 0x11, sizeof(a.hash));
   memset(b.hash, 0x22, sizeof(b.hash));
 
@@ -96,7 +96,7 @@ main () {
     rocksdb_slice_t vb = read_key(&db, kb.buf.buffer, kb.buf.len);
     assert(va.data != NULL && vb.data != NULL);
 
-    hc_merkle_tree_node_t got_a = {0}, got_b = {0};
+    hc_tree_node_t got_a = {0}, got_b = {0};
     decode_tree_node((uint8_t *) (uintptr_t) va.data, va.len, &got_a);
     decode_tree_node((uint8_t *) (uintptr_t) vb.data, vb.len, &got_b);
     rocksdb_slice_destroy(&va);

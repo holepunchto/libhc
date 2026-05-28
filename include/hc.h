@@ -9,7 +9,7 @@
 #include "hc/keys.h"
 #include "hc/merkle_tree.h"
 #include "hc/manifest.h"
-#include "hc/schema.h"
+#include "hc/encodings.h"
 #include "hc/db.h"
 
 #ifdef __cplusplus

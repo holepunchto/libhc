@@ -11,6 +11,9 @@
     "url": "https://github.com/holepunchto/libhc/issues"
   },
   "homepage": "https://github.com/holepunchto/libhc#readme",
+  "workspaces": [
+    "schema"
+  ],
   "devDependencies": {
     "cmake-bare": "^1.6.1",
     "cmake-fetch": "^1.4.3"

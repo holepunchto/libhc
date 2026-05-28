@@ -5,7 +5,7 @@
 #include <sodium.h>
 
 #include "hc/hashes.h"
-#include "hc/schema.h"
+#include "hc/encodings.h"
 
 static hc_hashes_t hashes;
 
