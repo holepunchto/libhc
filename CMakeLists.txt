@@ -9,9 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
 
-# Pinned to the `sync` branch from holepunchto/librocksdb PR #28 while the
-# synchronous API stabilises. Move back to the default ref once it merges.
-fetch_package("github:holepunchto/librocksdb#sync")
+fetch_package("github:holepunchto/librocksdb")
 
 fetch_package("github:holepunchto/liblexkey")
 
