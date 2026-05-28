@@ -31,8 +31,8 @@ hc_tree_node_encode (compact_state_t *state, const hc_merkle_tree_node_t *node) 
 
 int
 hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node) {
-  uintmax_t index;
-  uintmax_t size;
+  uint64_t index;
+  uint64_t size;
   compact_decode_uint(state, &index);
   compact_decode_uint(state, &size);
   node->index = (uint64_t) index;
@@ -65,7 +65,7 @@ hc_head_encode (compact_state_t *state, const hc_head_t *head) {
 
 int
 hc_head_decode (compact_state_t *state, hc_head_t *head) {
-  uintmax_t fork, length;
+  uint64_t fork, length;
   if (compact_decode_uint(state, &fork) < 0) return -1;
   if (compact_decode_uint(state, &length) < 0) return -1;
   head->fork = (uint64_t) fork;
@@ -85,7 +85,7 @@ hc_head_decode (compact_state_t *state, hc_head_t *head) {
     head->signature.len = 0;
   }
 
-  uintmax_t flags = 0;
+  uint64_t flags = 0;
   if (state->start < state->end) {
     if (compact_decode_uint(state, &flags) < 0) return -1;
   }
@@ -101,21 +101,21 @@ hc_head_decode (compact_state_t *state, hc_head_t *head) {
 
 static int
 preencode_signer (compact_state_t *state, const hc_signer_t *s) {
-  compact_preencode_uint(state, (uintmax_t) s->signature);
+  compact_preencode_uint(state, (uint64_t) s->signature);
   compact_preencode_fixed32(state, s->namespace);
   return compact_preencode_fixed32(state, s->public_key);
 }
 
 static int
 encode_signer (compact_state_t *state, const hc_signer_t *s) {
-  compact_encode_uint(state, (uintmax_t) s->signature);
+  compact_encode_uint(state, (uint64_t) s->signature);
   compact_encode_fixed32(state, s->namespace);
   return compact_encode_fixed32(state, s->public_key);
 }
 
 static int
 decode_signer (compact_state_t *state, hc_signer_t *s) {
-  uintmax_t sig;
+  uint64_t sig;
   if (compact_decode_uint(state, &sig) < 0) return -1;
   s->signature = (hc_signature_func_t) sig;
   if (compact_decode_fixed32(state, s->namespace) < 0) return -1;
@@ -124,7 +124,7 @@ decode_signer (compact_state_t *state, hc_signer_t *s) {
 
 static int
 preencode_signer_array (compact_state_t *state, const hc_signer_array_t *arr) {
-  compact_preencode_uint(state, (uintmax_t) arr->length);
+  compact_preencode_uint(state, (uint64_t) arr->length);
   for (size_t i = 0; i < arr->length; i++) {
     if (preencode_signer(state, &arr->buffers[i]) < 0) return -1;
   }
@@ -133,7 +133,7 @@ preencode_signer_array (compact_state_t *state, const hc_signer_array_t *arr) {
 
 static int
 encode_signer_array (compact_state_t *state, const hc_signer_array_t *arr) {
-  compact_encode_uint(state, (uintmax_t) arr->length);
+  compact_encode_uint(state, (uint64_t) arr->length);
   for (size_t i = 0; i < arr->length; i++) {
     if (encode_signer(state, &arr->buffers[i]) < 0) return -1;
   }
@@ -142,7 +142,7 @@ encode_signer_array (compact_state_t *state, const hc_signer_array_t *arr) {
 
 static int
 decode_signer_array (compact_state_t *state, hc_signer_array_t *arr) {
-  uintmax_t len;
+  uint64_t len;
   if (compact_decode_uint(state, &len) < 0) return -1;
   arr->length = (size_t) len;
   arr->capacity = (size_t) len;
@@ -156,7 +156,7 @@ decode_signer_array (compact_state_t *state, hc_signer_array_t *arr) {
 
 static int
 preencode_linked (compact_state_t *state, const hc_hash_array_t *arr) {
-  compact_preencode_uint(state, (uintmax_t) arr->length);
+  compact_preencode_uint(state, (uint64_t) arr->length);
   for (size_t i = 0; i < arr->length; i++) {
     compact_preencode_fixed32(state, arr->buffers[i]);
   }
@@ -165,7 +165,7 @@ preencode_linked (compact_state_t *state, const hc_hash_array_t *arr) {
 
 static int
 encode_linked (compact_state_t *state, const hc_hash_array_t *arr) {
-  compact_encode_uint(state, (uintmax_t) arr->length);
+  compact_encode_uint(state, (uint64_t) arr->length);
   for (size_t i = 0; i < arr->length; i++) {
     compact_encode_fixed32(state, arr->buffers[i]);
   }
@@ -174,7 +174,7 @@ encode_linked (compact_state_t *state, const hc_hash_array_t *arr) {
 
 static int
 decode_linked (compact_state_t *state, hc_hash_array_t *arr) {
-  uintmax_t len;
+  uint64_t len;
   if (compact_decode_uint(state, &len) < 0) return -1;
   arr->length = (size_t) len;
   arr->capacity = (size_t) len;
@@ -187,8 +187,8 @@ decode_linked (compact_state_t *state, hc_hash_array_t *arr) {
 }
 
 static int
-decode_v0 (compact_state_t *state, hc_manifest_t *m, uintmax_t hash_func) {
-  uintmax_t type;
+decode_v0 (compact_state_t *state, hc_manifest_t *m, uint64_t hash_func) {
+  uint64_t type;
   if (compact_decode_uint(state, &type) < 0) return -1;
   if (type > 2) return -1;
 
@@ -217,10 +217,10 @@ decode_v0 (compact_state_t *state, hc_manifest_t *m, uintmax_t hash_func) {
   }
 
   // type == 2
-  uintmax_t flags;
+  uint64_t flags;
   if (compact_decode_uint(state, &flags) < 0) return -1;
   m->allow_patch = (flags & 1) != 0;
-  uintmax_t quorum;
+  uint64_t quorum;
   if (compact_decode_uint(state, &quorum) < 0) return -1;
   m->quorum = (uint32_t) quorum;
   return decode_signer_array(state, &m->signers);
@@ -228,7 +228,7 @@ decode_v0 (compact_state_t *state, hc_manifest_t *m, uintmax_t hash_func) {
 
 int
 hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *m) {
-  compact_preencode_uint(state, (uintmax_t) m->version);
+  compact_preencode_uint(state, (uint64_t) m->version);
 
   if (m->version == 0) return -1; // encode v0 not supported
 
@@ -238,13 +238,13 @@ hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *m) {
   if (m->linked.length > 0) flags |= HC_MANIFEST_LINKED;
   if (m->user_data.buffer) flags |= HC_MANIFEST_USER_DATA;
 
-  compact_preencode_uint(state, (uintmax_t) flags);
-  compact_preencode_uint(state, (uintmax_t) m->hash);
-  compact_preencode_uint(state, (uintmax_t) m->quorum);
+  compact_preencode_uint(state, (uint64_t) flags);
+  compact_preencode_uint(state, (uint64_t) m->hash);
+  compact_preencode_uint(state, (uint64_t) m->quorum);
   if (preencode_signer_array(state, &m->signers) < 0) return -1;
   if (m->prologue) {
     compact_preencode_fixed32(state, m->prologue->hash);
-    compact_preencode_uint(state, (uintmax_t) m->prologue->length);
+    compact_preencode_uint(state, (uint64_t) m->prologue->length);
   }
   if (m->linked.length > 0) {
     if (preencode_linked(state, &m->linked) < 0) return -1;
@@ -257,7 +257,7 @@ hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *m) {
 
 int
 hc_manifest_encode (compact_state_t *state, const hc_manifest_t *m) {
-  compact_encode_uint(state, (uintmax_t) m->version);
+  compact_encode_uint(state, (uint64_t) m->version);
 
   if (m->version == 0) return -1; // encode v0 not supported
 
@@ -267,13 +267,13 @@ hc_manifest_encode (compact_state_t *state, const hc_manifest_t *m) {
   if (m->linked.length > 0) flags |= HC_MANIFEST_LINKED;
   if (m->user_data.buffer) flags |= HC_MANIFEST_USER_DATA;
 
-  compact_encode_uint(state, (uintmax_t) flags);
-  compact_encode_uint(state, (uintmax_t) m->hash);
-  compact_encode_uint(state, (uintmax_t) m->quorum);
+  compact_encode_uint(state, (uint64_t) flags);
+  compact_encode_uint(state, (uint64_t) m->hash);
+  compact_encode_uint(state, (uint64_t) m->quorum);
   if (encode_signer_array(state, &m->signers) < 0) return -1;
   if (m->prologue) {
     compact_encode_fixed32(state, m->prologue->hash);
-    compact_encode_uint(state, (uintmax_t) m->prologue->length);
+    compact_encode_uint(state, (uint64_t) m->prologue->length);
   }
   if (m->linked.length > 0) {
     if (encode_linked(state, &m->linked) < 0) return -1;
@@ -293,7 +293,7 @@ hc_store_head_preencode (compact_state_t *state, const struct hc_store_head_s *h
   uint8_t flags = 0;
   if (h->has_seed) flags |= HC_STORE_HEAD_SEED;
   if (h->has_default_discovery_key) flags |= HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY;
-  compact_preencode_uint(state, (uintmax_t) flags);
+  compact_preencode_uint(state, (uint64_t) flags);
   if (h->has_seed) compact_preencode_fixed32(state, h->seed);
   if (h->has_default_discovery_key) compact_preencode_fixed32(state, h->default_discovery_key);
   return 0;
@@ -308,7 +308,7 @@ hc_store_head_encode (compact_state_t *state, const struct hc_store_head_s *h) {
   uint8_t flags = 0;
   if (h->has_seed) flags |= HC_STORE_HEAD_SEED;
   if (h->has_default_discovery_key) flags |= HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY;
-  compact_encode_uint(state, (uintmax_t) flags);
+  compact_encode_uint(state, (uint64_t) flags);
   if (h->has_seed) compact_encode_fixed32(state, h->seed);
   if (h->has_default_discovery_key) compact_encode_fixed32(state, h->default_discovery_key);
   return 0;
@@ -316,16 +316,16 @@ hc_store_head_encode (compact_state_t *state, const struct hc_store_head_s *h) {
 
 int
 hc_store_head_decode (compact_state_t *state, struct hc_store_head_s *h) {
-  uintmax_t version;
+  uint64_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;
   if (version > 2) return -1;
 
   if (version == 1) {
-    uintmax_t flags;
+    uint64_t flags;
     if (compact_decode_uint(state, &flags) < 0) return -1;
     h->groups = 0;
     if (flags & 0x01) {
-      uintmax_t cores, datas;
+      uint64_t cores, datas;
       if (compact_decode_uint(state, &cores) < 0) return -1;
       if (compact_decode_uint(state, &datas) < 0) return -1;
       h->cores = (uint64_t) cores;
@@ -341,7 +341,7 @@ hc_store_head_decode (compact_state_t *state, struct hc_store_head_s *h) {
     return 0;
   }
 
-  uintmax_t cores, datas, groups, flags;
+  uint64_t cores, datas, groups, flags;
   if (compact_decode_uint(state, &cores) < 0) return -1;
   if (compact_decode_uint(state, &datas) < 0) return -1;
   if (compact_decode_uint(state, &groups) < 0) return -1;
@@ -376,7 +376,7 @@ hc_store_core_encode (compact_state_t *state, uint64_t core_ptr, uint64_t data_p
 
 int
 hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data_ptr) {
-  uintmax_t version, cp, dp, flags;
+  uint64_t version, cp, dp, flags;
   if (compact_decode_uint(state, &version) < 0) return -1;
   if (version != 1) return -1;
   if (compact_decode_uint(state, &cp) < 0) return -1;
@@ -389,22 +389,22 @@ hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data
 
 int
 hc_manifest_decode (compact_state_t *state, hc_manifest_t *m) {
-  uintmax_t version;
+  uint64_t version;
   if (compact_decode_uint(state, &version) < 0) return -1;
 
   if (version > 2) return -1;
 
   if (version == 0) {
-    uintmax_t hash_func;
+    uint64_t hash_func;
     if (compact_decode_uint(state, &hash_func) < 0) return -1;
     return decode_v0(state, m, hash_func);
   }
 
-  uintmax_t flags;
+  uint64_t flags;
   if (compact_decode_uint(state, &flags) < 0) return -1;
-  uintmax_t hash_func;
+  uint64_t hash_func;
   if (compact_decode_uint(state, &hash_func) < 0) return -1;
-  uintmax_t quorum;
+  uint64_t quorum;
   if (compact_decode_uint(state, &quorum) < 0) return -1;
 
   m->version = (uint32_t) version;
@@ -418,7 +418,7 @@ hc_manifest_decode (compact_state_t *state, hc_manifest_t *m) {
     m->prologue = malloc(sizeof(hc_prologue_t));
     if (m->prologue == NULL) return -1;
     if (compact_decode_fixed32(state, m->prologue->hash) < 0) return -1;
-    uintmax_t plen;
+    uint64_t plen;
     if (compact_decode_uint(state, &plen) < 0) return -1;
     m->prologue->length = (uint64_t) plen;
   } else {
