@@ -1,11 +1,10 @@
-#ifndef HC_SCHEMA_H
-#define HC_SCHEMA_H
+#ifndef HC_ENCODINGS_H
+#define HC_ENCODINGS_H
 
 #include <compact.h>
 
 #include "head.h"
 #include "manifest.h"
-#include "merkle_tree.h"
 
 // Forward decl to avoid a cycle through store.h (which now includes db.h
 // for hc__db_store_t).
@@ -14,13 +13,6 @@ struct hc_store_head_s;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-int
-hc_tree_node_preencode (compact_state_t *state, const hc_merkle_tree_node_t *node);
-int
-hc_tree_node_encode (compact_state_t *state, const hc_merkle_tree_node_t *node);
-int
-hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node);
 
 int
 hc_head_preencode (compact_state_t *state, const hc_head_t *head);
@@ -58,4 +50,4 @@ hc_store_core_decode (compact_state_t *state, uint64_t *core_ptr, uint64_t *data
 }
 #endif
 
-#endif // HC_SCHEMA_H
+#endif // HC_ENCODINGS_H
