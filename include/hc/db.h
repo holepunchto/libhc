@@ -12,7 +12,7 @@
 #include "buffer.h"
 #include "keys.h"
 #include "merkle_tree.h"
-#include "schema.h"
+#include "encodings.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -254,7 +254,7 @@ hc__db_core_write_head (hc__db_core_write_t *write, const hc_head_t *head) {
 }
 
 static inline int
-hc__db_core_write_tree_node (hc__db_core_write_t *write, const hc_merkle_tree_node_t *node) {
+hc__db_core_write_tree_node (hc__db_core_write_t *write, const hc_tree_node_t *node) {
   if (hc__array_grow(&write->tree_nodes, write->tree_nodes.length + 1) < 0) return -1;
 
   hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[write->tree_nodes.length++];
@@ -377,7 +377,7 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
 
     if (e->type == HC__DB_READ_TREE_NODE) {
       compact_state_t state = {0, e->value.len, e->value.buffer};
-      hc_tree_node_decode(&state, (hc_merkle_tree_node_t *) e->result);
+      hc_tree_node_decode(&state, (hc_tree_node_t *) e->result);
       free(e->value.buffer);
     } else if (e->type == HC__DB_READ_BLOCK) {
       *(hc_buf_t *) e->result = e->value;
@@ -390,7 +390,7 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
 }
 
 static inline int
-hc__db_core_read_get_tree_node (hc__db_core_read_t *read, uint64_t index, hc_merkle_tree_node_t *result) {
+hc__db_core_read_get_tree_node (hc__db_core_read_t *read, uint64_t index, hc_tree_node_t *result) {
   if (hc__array_grow(&read->small_reads, read->small_reads.length + 1) < 0) return -1;
   hc__db_small_read_t *e = &read->small_reads.buffers[read->small_reads.length++];
   e->type = HC__DB_READ_TREE_NODE;

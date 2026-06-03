@@ -11,8 +11,13 @@
     "url": "https://github.com/holepunchto/libhc/issues"
   },
   "homepage": "https://github.com/holepunchto/libhc#readme",
+  "scripts": {
+    "build:schema": "node schema/build.js"
+  },
   "devDependencies": {
     "cmake-bare": "^1.6.1",
-    "cmake-fetch": "^1.4.3"
+    "cmake-fetch": "^1.4.3",
+    "hyperschema": "^1.20.1",
+    "hyperschema-c": "^0.3.0"
   }
 }

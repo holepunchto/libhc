@@ -4,7 +4,7 @@
 
 #include <compact.h>
 
-#include "hc/schema.h"
+#include "hc/encodings.h"
 #include "hc/store.h"
 
 #define HC_MANIFEST_PATCH     0x01
@@ -14,31 +14,6 @@
 
 #define HC_STORE_HEAD_SEED                   0x01
 #define HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY  0x02
-
-int
-hc_tree_node_preencode (compact_state_t *state, const hc_merkle_tree_node_t *node) {
-  compact_preencode_uint(state, node->index);
-  compact_preencode_uint(state, node->size);
-  return compact_preencode_fixed32(state, node->hash);
-}
-
-int
-hc_tree_node_encode (compact_state_t *state, const hc_merkle_tree_node_t *node) {
-  compact_encode_uint(state, node->index);
-  compact_encode_uint(state, node->size);
-  return compact_encode_fixed32(state, node->hash);
-}
-
-int
-hc_tree_node_decode (compact_state_t *state, hc_merkle_tree_node_t *node) {
-  uint64_t index;
-  uint64_t size;
-  compact_decode_uint(state, &index);
-  compact_decode_uint(state, &size);
-  node->index = (uint64_t) index;
-  node->size = (uint64_t) size;
-  return compact_decode_fixed32(state, node->hash);
-}
 
 int
 hc_head_preencode (compact_state_t *state, const hc_head_t *head) {

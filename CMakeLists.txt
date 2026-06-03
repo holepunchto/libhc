@@ -202,8 +202,8 @@ target_sources(
     include/hc/head.h
     include/hc/keys.h
     include/hc/manifest.h
+    include/hc/encodings.h
     include/hc/merkle_tree.h
-    include/hc/schema.h
   PRIVATE
     src/init.c
     src/hashes.c
@@ -222,6 +222,12 @@ target_include_directories(
     include
 )
 
+add_subdirectory(schema)
+
+# PUBLIC propagates hc_schema's `compact` link requirement and include dirs.
+# The object code itself is bundled into hc_shared/hc_static via
+# $<TARGET_OBJECTS:hc_schema> below — hc is an OBJECT library and does not
+# archive other targets.
 target_link_libraries(
   hc
   PUBLIC
@@ -229,6 +235,7 @@ target_link_libraries(
     rocksdb
     lexkey
     flattree
+    hc_schema
 )
 
 add_library(hc_shared SHARED)
@@ -249,6 +256,7 @@ target_link_libraries(
     rocksdb_shared
     $<TARGET_OBJECTS:compact>
     $<TARGET_OBJECTS:utf>
+    $<TARGET_OBJECTS:hc_schema>
 )
 
 add_library(hc_static STATIC)
@@ -269,6 +277,7 @@ target_link_libraries(
     rocksdb_static
     $<TARGET_OBJECTS:compact>
     $<TARGET_OBJECTS:utf>
+    $<TARGET_OBJECTS:hc_schema>
 )
 
 # rocksdb_static carries C++ object code; force the C++ linker so libc++
@@ -280,6 +289,7 @@ install(TARGETS hc_shared hc_static)
 
 install(FILES include/hc.h DESTINATION include)
 install(DIRECTORY include/hc DESTINATION include)
+install(FILES schema/hc_schema.h DESTINATION include)
 
 if(PROJECT_IS_TOP_LEVEL)
   enable_testing()

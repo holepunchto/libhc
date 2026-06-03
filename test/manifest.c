@@ -7,7 +7,7 @@
 
 #include "hc.h"
 #include "hc/hashes.h"
-#include "hc/schema.h"
+#include "hc/encodings.h"
 
 // Expected bytes produced by the JS hypercore messages.manifest codec for this
 // exact manifest object (verified against the live JS implementation).

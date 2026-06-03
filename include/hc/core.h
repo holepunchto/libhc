@@ -20,7 +20,7 @@ struct hc_core_s {
   hc_hash_t key;
   hc_hash_t discovery_key;
   hc_manifest_t *manifest;
-  hc_merkle_tree_node_array_t roots;
+  hc_tree_node_array_t roots;
   uint64_t fork;
   uint64_t length;
   uint64_t byte_length;
@@ -47,7 +47,7 @@ typedef struct hc_core_upgrade_s hc_core_upgrade_t;
 
 struct hc_core_upgrade_s {
   hc_core_t *core;
-  hc_merkle_tree_node_array_t roots;
+  hc_tree_node_array_t roots;
   uint64_t length;
   uint64_t byte_length;
 };
