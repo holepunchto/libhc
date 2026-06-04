@@ -1,4 +1,4 @@
-name: Test
+name: Integrate
 on:
   push:
     branches:
@@ -13,25 +13,25 @@ jobs:
     strategy:
       matrix:
         include:
-        - os: ubuntu-latest
-          platform: linux
-          arch: x64
-        - os: macos-latest
-          platform: darwin
-          arch: arm64
-          flags: --sanitize address
-        - os: windows-latest
-          platform: win32
-          arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            flags: --debug
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            flags: --debug --sanitize address
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            flags: --debug
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    name: Test / ${{ matrix.platform }}-${{ matrix.arch }}
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - run: npm install -g bare-make
-    - run: npm install
-    - run: bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --debug ${{ matrix.flags }}
-    - run: bare-make build
-    - run: bare-make test
+      - uses: holepunchto/actions/bare-base@v1
+      - uses: holepunchto/actions/compile-prebuilds@v1
+        with:
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          flags: ${{ matrix.flags }}
+      - run: bare-make test
