@@ -13,7 +13,6 @@
 #include "head.h"
 #include "keys.h"
 #include "merkle_tree.h"
-#include "encodings.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -414,6 +413,10 @@ hc__db_core_read_get_block (hc__db_core_read_t *read, uint64_t index, hc_buf_t *
 }
 
 // ===== store-level batches =====
+
+// Upper bounds on compact-encoded store records.
+#define HC_STORE_HEAD_MAX_SIZE 128
+#define HC_STORE_CORE_MAX_SIZE 32
 
 typedef struct {
   hc_small_key_t key;

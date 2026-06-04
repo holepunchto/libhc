@@ -45,5 +45,42 @@ hc.register({
   ]
 })
 
+// compact: encoded inline (no length frame), matching the canonical hypercore
+// manifest encoding that the core key hashes over. hash/signature funcs encode
+// as a uint (one value each today); callers assign the HC_*_FUNC_* constants
+// kept in manifest.h.
+hc.register({
+  name: 'signer',
+  compact: true,
+  fields: [
+    { name: 'signature', type: 'uint', required: true },
+    { name: 'namespace', type: 'fixed32', required: true },
+    { name: 'public-key', type: 'fixed32', required: true }
+  ]
+})
+
+hc.register({
+  name: 'prologue',
+  compact: true,
+  fields: [
+    { name: 'hash', type: 'fixed32', required: true },
+    { name: 'length', type: 'uint', required: true }
+  ]
+})
+
+hc.register({
+  name: 'manifest',
+  fields: [
+    { name: 'version', type: 'uint', required: true },
+    { name: 'allow-patch', type: 'bool', required: true },
+    { name: 'hash', type: 'uint', required: true },
+    { name: 'quorum', type: 'uint', required: true },
+    { name: 'signers', type: '@hc/signer', array: true, required: true },
+    { name: 'prologue', type: '@hc/prologue', required: false },
+    { name: 'linked', type: 'fixed32', array: true, required: false },
+    { name: 'user-data', type: 'buffer', required: false }
+  ]
+})
+
 // Writes to __dirname (the directory passed to CHyperschema.from above).
 CHyperschema.toDisk(schema)

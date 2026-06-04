@@ -2,6 +2,7 @@
 // !!DO NOT EDIT!!
 
 #include "hc_schema.h"
+#include <stdlib.h>
 
 int
 hc_tree_node_preencode (compact_state_t *state, const hc_tree_node_t *value)
@@ -189,4 +190,190 @@ hc_store_core_decode (compact_state_t *state, hc_store_core_t *result)
 void
 hc_store_core_destroy (hc_store_core_t *result)
 {
+}
+
+int
+hc_signer_preencode (compact_state_t *state, const hc_signer_t *value)
+{
+  int err;
+  if ((err = compact_preencode_uint(state, value->signature)) < 0) return err;
+  if ((err = compact_preencode_fixed32(state, value->namespace)) < 0) return err;
+  if ((err = compact_preencode_fixed32(state, value->public_key)) < 0) return err;
+  return 0;
+}
+
+int
+hc_signer_encode (compact_state_t *state, const hc_signer_t *value)
+{
+  int err;
+  if ((err = compact_encode_uint(state, value->signature)) < 0) return err;
+  if ((err = compact_encode_fixed32(state, value->namespace)) < 0) return err;
+  if ((err = compact_encode_fixed32(state, value->public_key)) < 0) return err;
+  return 0;
+}
+
+int
+hc_signer_decode (compact_state_t *state, hc_signer_t *result)
+{
+  int err;
+  if ((err = compact_decode_uint(state, &result->signature)) < 0) return err;
+  if ((err = compact_decode_fixed32(state, result->namespace)) < 0) return err;
+  if ((err = compact_decode_fixed32(state, result->public_key)) < 0) return err;
+  return 0;
+}
+
+void
+hc_signer_destroy (hc_signer_t *result)
+{
+}
+
+int
+hc_prologue_preencode (compact_state_t *state, const hc_prologue_t *value)
+{
+  int err;
+  if ((err = compact_preencode_fixed32(state, value->hash)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->length)) < 0) return err;
+  return 0;
+}
+
+int
+hc_prologue_encode (compact_state_t *state, const hc_prologue_t *value)
+{
+  int err;
+  if ((err = compact_encode_fixed32(state, value->hash)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->length)) < 0) return err;
+  return 0;
+}
+
+int
+hc_prologue_decode (compact_state_t *state, hc_prologue_t *result)
+{
+  int err;
+  if ((err = compact_decode_fixed32(state, result->hash)) < 0) return err;
+  if ((err = compact_decode_uint(state, &result->length)) < 0) return err;
+  return 0;
+}
+
+void
+hc_prologue_destroy (hc_prologue_t *result)
+{
+}
+
+int
+hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *value)
+{
+  int err;
+  if ((err = compact_preencode_uint(state, value->version)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->allow_patch) flags |= ((uint64_t)1 << 0);
+  if (value->has_prologue) flags |= ((uint64_t)1 << 1);
+  if (value->has_linked) flags |= ((uint64_t)1 << 2);
+  if (value->has_user_data) flags |= ((uint64_t)1 << 3);
+  if ((err = compact_preencode_uint(state, flags)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->hash)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->quorum)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->signers_len)) < 0) return err;
+  for (size_t _i = 0; _i < value->signers_len; _i++) {
+    if ((err = hc_signer_preencode(state, &value->signers[_i])) < 0) return err;
+  }
+  if (value->has_prologue) {
+    if ((err = hc_prologue_preencode(state, &value->prologue)) < 0) return err;
+  }
+  if (value->has_linked) {
+    if ((err = compact_preencode_uint(state, value->linked_len)) < 0) return err;
+    for (size_t _i = 0; _i < value->linked_len; _i++) {
+      if ((err = compact_preencode_fixed32(state, value->linked[_i])) < 0) return err;
+    }
+  }
+  if (value->has_user_data) {
+    if ((err = compact_preencode_uint8array(state, value->user_data, value->user_data_len)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_manifest_encode (compact_state_t *state, const hc_manifest_t *value)
+{
+  int err;
+  if ((err = compact_encode_uint(state, value->version)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->allow_patch) flags |= ((uint64_t)1 << 0);
+  if (value->has_prologue) flags |= ((uint64_t)1 << 1);
+  if (value->has_linked) flags |= ((uint64_t)1 << 2);
+  if (value->has_user_data) flags |= ((uint64_t)1 << 3);
+  if ((err = compact_encode_uint(state, flags)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->hash)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->quorum)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->signers_len)) < 0) return err;
+  for (size_t _i = 0; _i < value->signers_len; _i++) {
+    if ((err = hc_signer_encode(state, &value->signers[_i])) < 0) return err;
+  }
+  if (value->has_prologue) {
+    if ((err = hc_prologue_encode(state, &value->prologue)) < 0) return err;
+  }
+  if (value->has_linked) {
+    if ((err = compact_encode_uint(state, value->linked_len)) < 0) return err;
+    for (size_t _i = 0; _i < value->linked_len; _i++) {
+      if ((err = compact_encode_fixed32(state, value->linked[_i])) < 0) return err;
+    }
+  }
+  if (value->has_user_data) {
+    if ((err = compact_encode_uint8array(state, value->user_data, value->user_data_len)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_manifest_decode (compact_state_t *state, hc_manifest_t *result)
+{
+  int err;
+  uint64_t _count;
+  if ((err = compact_decode_uint(state, &result->version)) < 0) goto fail;
+  uint64_t flags = 0;
+  if ((err = compact_decode_uint(state, &flags)) < 0) goto fail;
+  result->allow_patch = (flags & ((uint64_t)1 << 0)) != 0;
+  result->has_prologue = (flags & ((uint64_t)1 << 1)) != 0;
+  result->has_linked = (flags & ((uint64_t)1 << 2)) != 0;
+  result->has_user_data = (flags & ((uint64_t)1 << 3)) != 0;
+  if ((err = compact_decode_uint(state, &result->hash)) < 0) goto fail;
+  if ((err = compact_decode_uint(state, &result->quorum)) < 0) goto fail;
+  if ((err = compact_decode_uint(state, &_count)) < 0) goto fail;
+  result->signers = calloc(_count, sizeof(*result->signers));
+  if (result->signers == NULL && _count > 0) { err = -1; goto fail; }
+  result->signers_len = (size_t)_count;
+  for (size_t _i = 0; _i < (size_t)_count; _i++) {
+    if ((err = hc_signer_decode(state, &result->signers[_i])) < 0) goto fail;
+  }
+  if (result->has_prologue) {
+    if ((err = hc_prologue_decode(state, &result->prologue)) < 0) goto fail;
+  }
+  if (result->has_linked) {
+    if ((err = compact_decode_uint(state, &_count)) < 0) goto fail;
+    result->linked = calloc(_count, sizeof(*result->linked));
+    if (result->linked == NULL && _count > 0) { err = -1; goto fail; }
+    result->linked_len = (size_t)_count;
+    for (size_t _i = 0; _i < (size_t)_count; _i++) {
+      if ((err = compact_decode_fixed32(state, result->linked[_i])) < 0) goto fail;
+    }
+  }
+  if (result->has_user_data) {
+    if ((err = compact_decode_uint8array(state, &result->user_data, &result->user_data_len)) < 0) goto fail;
+  }
+  return 0;
+fail:
+  hc_manifest_destroy(result);
+  return err;
+}
+
+void
+hc_manifest_destroy (hc_manifest_t *result)
+{
+  for (size_t _i = 0; _i < result->signers_len; _i++) {
+    hc_signer_destroy(&result->signers[_i]);
+  }
+  free(result->signers);
+  result->signers = NULL;
+  hc_prologue_destroy(&result->prologue);
+  free(result->linked);
+  result->linked = NULL;
 }

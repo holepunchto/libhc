@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "schema": [
     {
       "name": "tree-node",
@@ -120,6 +120,110 @@
           "required": true,
           "type": "uint",
           "version": 4
+        }
+      ]
+    },
+    {
+      "name": "signer",
+      "namespace": "hc",
+      "compact": true,
+      "flagsPosition": -1,
+      "fields": [
+        {
+          "name": "signature",
+          "required": true,
+          "type": "uint",
+          "version": 5
+        },
+        {
+          "name": "namespace",
+          "required": true,
+          "type": "fixed32",
+          "version": 5
+        },
+        {
+          "name": "public-key",
+          "required": true,
+          "type": "fixed32",
+          "version": 5
+        }
+      ]
+    },
+    {
+      "name": "prologue",
+      "namespace": "hc",
+      "compact": true,
+      "flagsPosition": -1,
+      "fields": [
+        {
+          "name": "hash",
+          "required": true,
+          "type": "fixed32",
+          "version": 5
+        },
+        {
+          "name": "length",
+          "required": true,
+          "type": "uint",
+          "version": 5
+        }
+      ]
+    },
+    {
+      "name": "manifest",
+      "namespace": "hc",
+      "compact": false,
+      "flagsPosition": 1,
+      "fields": [
+        {
+          "name": "version",
+          "required": true,
+          "type": "uint",
+          "version": 5
+        },
+        {
+          "name": "allow-patch",
+          "required": false,
+          "type": "bool",
+          "version": 5
+        },
+        {
+          "name": "hash",
+          "required": true,
+          "type": "uint",
+          "version": 5
+        },
+        {
+          "name": "quorum",
+          "required": true,
+          "type": "uint",
+          "version": 5
+        },
+        {
+          "name": "signers",
+          "required": true,
+          "array": true,
+          "type": "@hc/signer",
+          "version": 5
+        },
+        {
+          "name": "prologue",
+          "required": false,
+          "type": "@hc/prologue",
+          "version": 5
+        },
+        {
+          "name": "linked",
+          "required": false,
+          "array": true,
+          "type": "fixed32",
+          "version": 5
+        },
+        {
+          "name": "user-data",
+          "required": false,
+          "type": "buffer",
+          "version": 5
         }
       ]
     }
