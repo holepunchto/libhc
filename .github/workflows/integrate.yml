@@ -16,15 +16,13 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-            flags: --debug
           - os: macos-latest
             platform: darwin
             arch: arm64
-            flags: --debug --sanitize address
+            flags: --sanitize address
           - os: windows-latest
             platform: win32
             arch: x64
-            flags: --debug
     runs-on: ${{ matrix.os }}
     name: Test / ${{ matrix.platform }}-${{ matrix.arch }}
     steps:
@@ -33,5 +31,5 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
-          flags: ${{ matrix.flags }}
+          flags: --debug ${{ matrix.flags }}
       - run: bare-make test
