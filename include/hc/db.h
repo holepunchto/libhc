@@ -10,6 +10,7 @@
 
 #include "array.h"
 #include "buffer.h"
+#include "head.h"
 #include "keys.h"
 #include "merkle_tree.h"
 #include "encodings.h"

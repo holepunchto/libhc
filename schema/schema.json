@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "schema": [
     {
       "name": "tree-node",
@@ -24,6 +24,44 @@
           "required": true,
           "type": "fixed32",
           "version": 1
+        }
+      ]
+    },
+    {
+      "name": "head",
+      "namespace": "hc",
+      "compact": false,
+      "flagsPosition": 4,
+      "fields": [
+        {
+          "name": "fork",
+          "required": true,
+          "type": "uint",
+          "version": 2
+        },
+        {
+          "name": "length",
+          "required": true,
+          "type": "uint",
+          "version": 2
+        },
+        {
+          "name": "root-hash",
+          "required": true,
+          "type": "fixed32",
+          "version": 2
+        },
+        {
+          "name": "signature",
+          "required": true,
+          "type": "buffer",
+          "version": 2
+        },
+        {
+          "name": "timestamp",
+          "required": false,
+          "type": "uint64",
+          "version": 2
         }
       ]
     }

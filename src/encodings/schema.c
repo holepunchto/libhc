@@ -15,65 +15,6 @@
 #define HC_STORE_HEAD_SEED                   0x01
 #define HC_STORE_HEAD_DEFAULT_DISCOVERY_KEY  0x02
 
-int
-hc_head_preencode (compact_state_t *state, const hc_head_t *head) {
-  compact_preencode_uint(state, head->fork);
-  compact_preencode_uint(state, head->length);
-  compact_preencode_fixed32(state, head->root_hash);
-  compact_preencode_uint8array(state, head->signature.buffer, head->signature.len);
-  state->end++; // flags byte (uint, always at least 1 byte)
-  if (head->timestamp) compact_preencode_uint64(state, head->timestamp);
-  return 0;
-}
-
-int
-hc_head_encode (compact_state_t *state, const hc_head_t *head) {
-  uint8_t flags = head->timestamp ? 1 : 0;
-  compact_encode_uint(state, head->fork);
-  compact_encode_uint(state, head->length);
-  compact_encode_fixed32(state, head->root_hash);
-  compact_encode_uint8array(state, head->signature.buffer, head->signature.len);
-  compact_encode_uint(state, flags);
-  if (head->timestamp) compact_encode_uint64(state, head->timestamp);
-  return 0;
-}
-
-int
-hc_head_decode (compact_state_t *state, hc_head_t *head) {
-  uint64_t fork, length;
-  if (compact_decode_uint(state, &fork) < 0) return -1;
-  if (compact_decode_uint(state, &length) < 0) return -1;
-  head->fork = (uint64_t) fork;
-  head->length = (uint64_t) length;
-  if (compact_decode_fixed32(state, head->root_hash) < 0) return -1;
-
-  uint8_t *sig_slice = NULL;
-  size_t sig_len = 0;
-  if (compact_decode_uint8array(state, &sig_slice, &sig_len) < 0) return -1;
-  if (sig_len > 0) {
-    head->signature.buffer = malloc(sig_len);
-    if (head->signature.buffer == NULL) return -1;
-    memcpy(head->signature.buffer, sig_slice, sig_len);
-    head->signature.len = sig_len;
-  } else {
-    head->signature.buffer = NULL;
-    head->signature.len = 0;
-  }
-
-  uint64_t flags = 0;
-  if (state->start < state->end) {
-    if (compact_decode_uint(state, &flags) < 0) return -1;
-  }
-
-  if (flags & 1) {
-    if (compact_decode_uint64(state, &head->timestamp) < 0) return -1;
-  } else {
-    head->timestamp = 0;
-  }
-
-  return 0;
-}
-
 static int
 preencode_signer (compact_state_t *state, const hc_signer_t *s) {
   compact_preencode_uint(state, (uint64_t) s->signature);
