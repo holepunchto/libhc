@@ -5,10 +5,6 @@
 
 #include "manifest.h"
 
-// Forward decl to avoid a cycle through store.h (which now includes db.h
-// for hc__db_store_t).
-struct hc_store_head_s;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,13 +15,6 @@ int
 hc_manifest_encode (compact_state_t *state, const hc_manifest_t *manifest);
 int
 hc_manifest_decode (compact_state_t *state, hc_manifest_t *manifest);
-
-int
-hc_store_head_preencode (compact_state_t *state, const struct hc_store_head_s *head);
-int
-hc_store_head_encode (compact_state_t *state, const struct hc_store_head_s *head);
-int
-hc_store_head_decode (compact_state_t *state, struct hc_store_head_s *head);
 
 int
 hc_store_core_preencode (compact_state_t *state, uint64_t core_ptr, uint64_t data_ptr);

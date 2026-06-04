@@ -24,5 +24,18 @@ hc.register({
   ]
 })
 
+hc.register({
+  name: 'store-head',
+  fields: [
+    { name: 'cores', type: 'uint', required: true },
+    { name: 'datas', type: 'uint', required: true },
+    { name: 'groups', type: 'uint', required: true },
+    // Optionals gate on the flags byte: seed = bit 0, default-discovery-key
+    // = bit 1, matching the hand-written HC_STORE_HEAD_* flags.
+    { name: 'seed', type: 'fixed32', required: false },
+    { name: 'default-discovery-key', type: 'fixed32', required: false }
+  ]
+})
+
 // Writes to __dirname (the directory passed to CHyperschema.from above).
 CHyperschema.toDisk(schema)

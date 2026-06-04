@@ -93,3 +93,68 @@ void
 hc_head_destroy (hc_head_t *result)
 {
 }
+
+int
+hc_store_head_preencode (compact_state_t *state, const hc_store_head_t *value)
+{
+  int err;
+  if ((err = compact_preencode_uint(state, value->cores)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->datas)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->groups)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->has_seed) flags |= ((uint64_t)1 << 0);
+  if (value->has_default_discovery_key) flags |= ((uint64_t)1 << 1);
+  if ((err = compact_preencode_uint(state, flags)) < 0) return err;
+  if (value->has_seed) {
+    if ((err = compact_preencode_fixed32(state, value->seed)) < 0) return err;
+  }
+  if (value->has_default_discovery_key) {
+    if ((err = compact_preencode_fixed32(state, value->default_discovery_key)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_store_head_encode (compact_state_t *state, const hc_store_head_t *value)
+{
+  int err;
+  if ((err = compact_encode_uint(state, value->cores)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->datas)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->groups)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->has_seed) flags |= ((uint64_t)1 << 0);
+  if (value->has_default_discovery_key) flags |= ((uint64_t)1 << 1);
+  if ((err = compact_encode_uint(state, flags)) < 0) return err;
+  if (value->has_seed) {
+    if ((err = compact_encode_fixed32(state, value->seed)) < 0) return err;
+  }
+  if (value->has_default_discovery_key) {
+    if ((err = compact_encode_fixed32(state, value->default_discovery_key)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_store_head_decode (compact_state_t *state, hc_store_head_t *result)
+{
+  int err;
+  if ((err = compact_decode_uint(state, &result->cores)) < 0) return err;
+  if ((err = compact_decode_uint(state, &result->datas)) < 0) return err;
+  if ((err = compact_decode_uint(state, &result->groups)) < 0) return err;
+  uint64_t flags = 0;
+  if ((err = compact_decode_uint(state, &flags)) < 0) return err;
+  result->has_seed = (flags & ((uint64_t)1 << 0)) != 0;
+  result->has_default_discovery_key = (flags & ((uint64_t)1 << 1)) != 0;
+  if (result->has_seed) {
+    if ((err = compact_decode_fixed32(state, result->seed)) < 0) return err;
+  }
+  if (result->has_default_discovery_key) {
+    if ((err = compact_decode_fixed32(state, result->default_discovery_key)) < 0) return err;
+  }
+  return 0;
+}
+
+void
+hc_store_head_destroy (hc_store_head_t *result)
+{
+}

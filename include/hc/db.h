@@ -28,16 +28,6 @@ hc__key_slice (const hc_small_key_t *key) {
   return rocksdb_slice_init((const char *) key->data, key->buf.len);
 }
 
-typedef struct hc_store_head_s {
-  uint64_t cores;
-  uint64_t datas;
-  uint64_t groups;
-  uint8_t has_seed;
-  hc_hash_t seed;
-  uint8_t has_default_discovery_key;
-  hc_hash_t default_discovery_key;
-} hc_store_head_t;
-
 // Result type for store-by-discovery-key lookups. found is 0 if the entry
 // was not present in the kv.
 typedef struct hc_store_core_s {
