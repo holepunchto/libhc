@@ -111,13 +111,20 @@ hc_core_load (hc_core_t *core) {
   hc_head_t head = {0};
   compact_state_t vs = {0, read.value.len, (uint8_t *) (uintptr_t) read.value.data};
   err = hc_head_decode(&vs, &head);
-  rocksdb_slice_destroy(&read.value);
-  rocksdb_read_cleanup(&batch);
-  if (err < 0) return err;
+  if (err < 0) {
+    rocksdb_slice_destroy(&read.value);
+    rocksdb_read_cleanup(&batch);
+    return err;
+  }
 
   core->fork = head.fork;
   core->length = head.length;
   hc_head_destroy(&head);
+
+  // head borrows from read.value (e.g. signature); release it only now that
+  // we are done reading head.
+  rocksdb_slice_destroy(&read.value);
+  rocksdb_read_cleanup(&batch);
 
   if (core->length == 0) return 0;
 
