@@ -49,8 +49,6 @@ hc_core_append_work (hc_core_upgrade_t *upgrade, hc__db_core_write_t *write, con
   hc_head_t head = {
     .fork = upgrade->core->fork,
     .length = upgrade->length,
-    .signature = {0, NULL},
-    .timestamp = 0,
   };
   hc_crypto_tree(head.root_hash, (const hc_crypto_node_t *) upgrade->roots.buffers, upgrade->roots.length);
 

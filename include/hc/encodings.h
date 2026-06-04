@@ -3,7 +3,6 @@
 
 #include <compact.h>
 
-#include "head.h"
 #include "manifest.h"
 
 // Forward decl to avoid a cycle through store.h (which now includes db.h
@@ -13,13 +12,6 @@ struct hc_store_head_s;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-int
-hc_head_preencode (compact_state_t *state, const hc_head_t *head);
-int
-hc_head_encode (compact_state_t *state, const hc_head_t *head);
-int
-hc_head_decode (compact_state_t *state, hc_head_t *head);
 
 int
 hc_manifest_preencode (compact_state_t *state, const hc_manifest_t *manifest);

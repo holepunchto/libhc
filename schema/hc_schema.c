@@ -37,3 +37,59 @@ void
 hc_tree_node_destroy (hc_tree_node_t *result)
 {
 }
+
+int
+hc_head_preencode (compact_state_t *state, const hc_head_t *value)
+{
+  int err;
+  if ((err = compact_preencode_uint(state, value->fork)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->length)) < 0) return err;
+  if ((err = compact_preencode_fixed32(state, value->root_hash)) < 0) return err;
+  if ((err = compact_preencode_uint8array(state, value->signature, value->signature_len)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->has_timestamp) flags |= ((uint64_t)1 << 0);
+  if ((err = compact_preencode_uint(state, flags)) < 0) return err;
+  if (value->has_timestamp) {
+    if ((err = compact_preencode_uint64(state, value->timestamp)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_head_encode (compact_state_t *state, const hc_head_t *value)
+{
+  int err;
+  if ((err = compact_encode_uint(state, value->fork)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->length)) < 0) return err;
+  if ((err = compact_encode_fixed32(state, value->root_hash)) < 0) return err;
+  if ((err = compact_encode_uint8array(state, value->signature, value->signature_len)) < 0) return err;
+  uint64_t flags = 0;
+  if (value->has_timestamp) flags |= ((uint64_t)1 << 0);
+  if ((err = compact_encode_uint(state, flags)) < 0) return err;
+  if (value->has_timestamp) {
+    if ((err = compact_encode_uint64(state, value->timestamp)) < 0) return err;
+  }
+  return 0;
+}
+
+int
+hc_head_decode (compact_state_t *state, hc_head_t *result)
+{
+  int err;
+  if ((err = compact_decode_uint(state, &result->fork)) < 0) return err;
+  if ((err = compact_decode_uint(state, &result->length)) < 0) return err;
+  if ((err = compact_decode_fixed32(state, result->root_hash)) < 0) return err;
+  if ((err = compact_decode_uint8array(state, &result->signature, &result->signature_len)) < 0) return err;
+  uint64_t flags = 0;
+  if ((err = compact_decode_uint(state, &flags)) < 0) return err;
+  result->has_timestamp = (flags & ((uint64_t)1 << 0)) != 0;
+  if (result->has_timestamp) {
+    if ((err = compact_decode_uint64(state, &result->timestamp)) < 0) return err;
+  }
+  return 0;
+}
+
+void
+hc_head_destroy (hc_head_t *result)
+{
+}
