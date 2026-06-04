@@ -18,6 +18,15 @@
 extern "C" {
 #endif
 
+// hc_small_key_t.buf.buffer points into the key's own inline `data`, so it
+// dangles once the key is moved — e.g. when its containing array (tree_nodes,
+// blocks, deletes, reads, cores) is grown and realloc'd. Build the rocksdb
+// slice from the inline storage, which always tracks the key's current address.
+static inline rocksdb_slice_t
+hc__key_slice (const hc_small_key_t *key) {
+  return rocksdb_slice_init((const char *) key->data, key->buf.len);
+}
+
 typedef struct hc_store_head_s {
   uint64_t cores;
   uint64_t datas;
@@ -202,8 +211,8 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     hc__db_tree_node_kv_t *kv = &write->tree_nodes.buffers[j];
     writes[i].type = rocksdb_put;
     writes[i].column_family = write->db->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
-    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    writes[i].key = hc__key_slice(&kv->key);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value_data, kv->value.len);
     i++;
   }
 
@@ -211,7 +220,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     hc__db_block_kv_t *kv = &write->blocks.buffers[j];
     writes[i].type = rocksdb_put;
     writes[i].column_family = write->db->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].key = hc__key_slice(&kv->key);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
   }
@@ -220,7 +229,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     hc_small_key_t *key = &write->deletes.buffers[j];
     writes[i].type = rocksdb_delete;
     writes[i].column_family = write->db->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) key->buf.buffer, key->buf.len);
+    writes[i].key = hc__key_slice(key);
     writes[i].value = rocksdb_slice_empty();
     i++;
   }
@@ -229,7 +238,7 @@ hc__db_core_write_flush (hc__db_core_write_t *write) {
     hc__db_core_head_kv_t *kv = &write->head;
     writes[i].type = rocksdb_put;
     writes[i].column_family = write->db->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].key = hc__key_slice(&kv->key);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
   }
@@ -346,7 +355,7 @@ hc__db_core_read_flush (hc__db_core_read_t *read) {
     hc__db_small_read_t *e = &read->small_reads.buffers[i];
     reads[i].type = rocksdb_get;
     reads[i].column_family = read->db->db->cf;
-    reads[i].key = rocksdb_slice_init((const char *) e->key.buf.buffer, e->key.buf.len);
+    reads[i].key = hc__key_slice(&e->key);
     reads[i].value = rocksdb_slice_empty();
   }
 
@@ -484,7 +493,7 @@ hc__db_store_write_flush (hc__db_store_write_t *write) {
     hc__db_store_head_kv_t *kv = &write->head;
     writes[i].type = rocksdb_put;
     writes[i].column_family = write->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
+    writes[i].key = hc__key_slice(&kv->key);
     writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
     i++;
   }
@@ -493,8 +502,8 @@ hc__db_store_write_flush (hc__db_store_write_t *write) {
     hc__db_store_core_kv_t *kv = &write->cores.buffers[j];
     writes[i].type = rocksdb_put;
     writes[i].column_family = write->db->cf;
-    writes[i].key = rocksdb_slice_init((const char *) kv->key.buf.buffer, kv->key.buf.len);
-    writes[i].value = rocksdb_slice_init((const char *) kv->value.buffer, kv->value.len);
+    writes[i].key = hc__key_slice(&kv->key);
+    writes[i].value = rocksdb_slice_init((const char *) kv->value_data, kv->value.len);
     i++;
   }
 
@@ -573,7 +582,7 @@ hc__db_store_read_flush (hc__db_store_read_t *read) {
     hc__db_store_small_read_t *e = &read->small_reads.buffers[i];
     reads[i].type = rocksdb_get;
     reads[i].column_family = read->db->cf;
-    reads[i].key = rocksdb_slice_init((const char *) e->key.buf.buffer, e->key.buf.len);
+    reads[i].key = hc__key_slice(&e->key);
     reads[i].value = rocksdb_slice_empty();
   }
 
