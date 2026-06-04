@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "schema": [
     {
       "name": "tree-node",
@@ -62,6 +62,44 @@
           "required": false,
           "type": "uint64",
           "version": 2
+        }
+      ]
+    },
+    {
+      "name": "store-head",
+      "namespace": "hc",
+      "compact": false,
+      "flagsPosition": 3,
+      "fields": [
+        {
+          "name": "cores",
+          "required": true,
+          "type": "uint",
+          "version": 3
+        },
+        {
+          "name": "datas",
+          "required": true,
+          "type": "uint",
+          "version": 3
+        },
+        {
+          "name": "groups",
+          "required": true,
+          "type": "uint",
+          "version": 3
+        },
+        {
+          "name": "seed",
+          "required": false,
+          "type": "fixed32",
+          "version": 3
+        },
+        {
+          "name": "default-discovery-key",
+          "required": false,
+          "type": "fixed32",
+          "version": 3
         }
       ]
     }
