@@ -37,5 +37,13 @@ hc.register({
   ]
 })
 
+hc.register({
+  name: 'store-core',
+  fields: [
+    { name: 'core-ptr', type: 'uint', required: true },
+    { name: 'data-ptr', type: 'uint', required: true }
+  ]
+})
+
 // Writes to __dirname (the directory passed to CHyperschema.from above).
 CHyperschema.toDisk(schema)

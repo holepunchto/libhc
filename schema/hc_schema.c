@@ -158,3 +158,35 @@ void
 hc_store_head_destroy (hc_store_head_t *result)
 {
 }
+
+int
+hc_store_core_preencode (compact_state_t *state, const hc_store_core_t *value)
+{
+  int err;
+  if ((err = compact_preencode_uint(state, value->core_ptr)) < 0) return err;
+  if ((err = compact_preencode_uint(state, value->data_ptr)) < 0) return err;
+  return 0;
+}
+
+int
+hc_store_core_encode (compact_state_t *state, const hc_store_core_t *value)
+{
+  int err;
+  if ((err = compact_encode_uint(state, value->core_ptr)) < 0) return err;
+  if ((err = compact_encode_uint(state, value->data_ptr)) < 0) return err;
+  return 0;
+}
+
+int
+hc_store_core_decode (compact_state_t *state, hc_store_core_t *result)
+{
+  int err;
+  if ((err = compact_decode_uint(state, &result->core_ptr)) < 0) return err;
+  if ((err = compact_decode_uint(state, &result->data_ptr)) < 0) return err;
+  return 0;
+}
+
+void
+hc_store_core_destroy (hc_store_core_t *result)
+{
+}
