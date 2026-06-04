@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "schema": [
     {
       "name": "tree-node",
@@ -100,6 +100,26 @@
           "required": false,
           "type": "fixed32",
           "version": 3
+        }
+      ]
+    },
+    {
+      "name": "store-core",
+      "namespace": "hc",
+      "compact": false,
+      "flagsPosition": -1,
+      "fields": [
+        {
+          "name": "core-ptr",
+          "required": true,
+          "type": "uint",
+          "version": 4
+        },
+        {
+          "name": "data-ptr",
+          "required": true,
+          "type": "uint",
+          "version": 4
         }
       ]
     }

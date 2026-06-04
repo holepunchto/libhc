@@ -29,12 +29,12 @@ hc__key_slice (const hc_small_key_t *key) {
 }
 
 // Result type for store-by-discovery-key lookups. found is 0 if the entry
-// was not present in the kv.
-typedef struct hc_store_core_s {
+// was not present in the kv. core_ptr/data_ptr are the decoded hc_store_core_t.
+typedef struct hc_store_core_lookup_s {
   uint8_t found;
   uint64_t core_ptr;
   uint64_t data_ptr;
-} hc_store_core_t;
+} hc_store_core_lookup_t;
 
 // Bundle of a rocksdb handle and the active column family. Owned by an
 // hc_store_t; borrowed (by pointer) by per-core db handles. The store
@@ -464,7 +464,8 @@ hc__db_store_write_put_core (hc__db_store_write_t *write, const hc_hash_t discov
   hc__db_store_core_kv_t *kv = &write->cores.buffers[write->cores.length++];
   hc_key_store_core(&kv->key, discovery_key);
   compact_state_t state = {0, sizeof(kv->value_data), kv->value_data};
-  hc_store_core_encode(&state, core_ptr, data_ptr);
+  hc_store_core_t record = {.core_ptr = core_ptr, .data_ptr = data_ptr};
+  hc_store_core_encode(&state, &record);
   kv->value.buffer = kv->value_data;
   kv->value.len = state.start;
   return 0;
@@ -549,7 +550,7 @@ hc__db_store_read_get_head (hc__db_store_read_t *read, hc_store_head_t *result) 
 
 // Result.found is set to 0 on miss, 1 on hit (with core_ptr/data_ptr populated).
 static inline int
-hc__db_store_read_get_core (hc__db_store_read_t *read, const hc_hash_t discovery_key, hc_store_core_t *result) {
+hc__db_store_read_get_core (hc__db_store_read_t *read, const hc_hash_t discovery_key, hc_store_core_lookup_t *result) {
   if (hc__array_grow(&read->small_reads, read->small_reads.length + 1) < 0) return -1;
   hc__db_store_small_read_t *e = &read->small_reads.buffers[read->small_reads.length++];
   e->type = HC__DB_STORE_READ_CORE;
@@ -603,8 +604,11 @@ hc__db_store_read_flush (hc__db_store_read_t *read) {
       hc_store_head_decode(&state, (hc_store_head_t *) e->result);
     } else if (e->type == HC__DB_STORE_READ_CORE) {
       compact_state_t state = {0, len, bytes};
-      hc_store_core_t *out = (hc_store_core_t *) e->result;
-      if (hc_store_core_decode(&state, &out->core_ptr, &out->data_ptr) == 0) {
+      hc_store_core_lookup_t *out = (hc_store_core_lookup_t *) e->result;
+      hc_store_core_t record;
+      if (hc_store_core_decode(&state, &record) == 0) {
+        out->core_ptr = record.core_ptr;
+        out->data_ptr = record.data_ptr;
         out->found = 1;
       }
     }

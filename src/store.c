@@ -58,7 +58,7 @@ fail:
 
 int
 hc_store_get (hc_store_t *store, struct hc_core_s *core, const hc_hash_t key, const hc_hash_t discovery_key) {
-  hc_store_core_t entry = {0};
+  hc_store_core_lookup_t entry = {0};
 
   hc__db_store_read_t read;
   hc__db_store_read_init(&read, &store->db);
