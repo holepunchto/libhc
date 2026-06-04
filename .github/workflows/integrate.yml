@@ -19,6 +19,7 @@ jobs:
         - os: macos-latest
           platform: darwin
           arch: arm64
+          flags: --sanitize address
         - os: windows-latest
           platform: win32
           arch: x64
@@ -31,6 +32,6 @@ jobs:
         node-version: lts/*
     - run: npm install -g bare-make
     - run: npm install
-    - run: bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --debug
+    - run: bare-make generate --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --debug ${{ matrix.flags }}
     - run: bare-make build
     - run: bare-make test
