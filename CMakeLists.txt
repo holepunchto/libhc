@@ -202,7 +202,6 @@ target_sources(
     include/hc/head.h
     include/hc/keys.h
     include/hc/manifest.h
-    include/hc/encodings.h
     include/hc/merkle_tree.h
   PRIVATE
     src/init.c
@@ -213,7 +212,6 @@ target_sources(
     src/keys.c
     src/merkle_tree.c
     src/encodings/keys.c
-    src/encodings/schema.c
 )
 
 target_include_directories(

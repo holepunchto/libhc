@@ -7,7 +7,6 @@
 
 #include "hc.h"
 #include "hc/hashes.h"
-#include "hc/encodings.h"
 
 // Expected bytes produced by the JS hypercore messages.manifest codec for this
 // exact manifest object (verified against the live JS implementation).
@@ -41,10 +40,8 @@ main () {
     .hash = HC_HASH_FUNC_BLAKE2B,
     .allow_patch = false,
     .quorum = 1,
-    .signers = {.buffers = &signer, .length = 1, .capacity = 1},
-    .prologue = NULL,
-    .linked = {.buffers = NULL, .length = 0, .capacity = 0},
-    .user_data = {.buffer = NULL, .len = 0},
+    .signers = &signer,
+    .signers_len = 1,
   };
 
   // Preencode to determine size.
@@ -68,13 +65,13 @@ main () {
   assert(got.hash == HC_HASH_FUNC_BLAKE2B);
   assert(got.allow_patch == false);
   assert(got.quorum == 1);
-  assert(got.signers.length == 1);
-  assert(got.signers.buffers[0].signature == HC_SIGNATURE_FUNC_ED25519);
-  assert(memcmp(got.signers.buffers[0].namespace, signer.namespace, 32) == 0);
-  assert(memcmp(got.signers.buffers[0].public_key, signer.public_key, 32) == 0);
-  assert(got.prologue == NULL);
-  assert(got.linked.length == 0);
-  assert(got.user_data.buffer == NULL);
+  assert(got.signers_len == 1);
+  assert(got.signers[0].signature == HC_SIGNATURE_FUNC_ED25519);
+  assert(memcmp(got.signers[0].namespace, signer.namespace, 32) == 0);
+  assert(memcmp(got.signers[0].public_key, signer.public_key, 32) == 0);
+  assert(!got.has_prologue);
+  assert(!got.has_linked);
+  assert(!got.has_user_data);
 
   hc_manifest_destroy(&got);
 
