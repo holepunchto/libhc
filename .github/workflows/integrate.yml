@@ -32,4 +32,4 @@ jobs:
           platform: ${{ matrix.platform }}
           arch: ${{ matrix.arch }}
           flags: --debug ${{ matrix.flags }}
-      - run: bare-make test
+      - run: bare-make test --verbose
