@@ -7,7 +7,7 @@ project(hc C CXX ASM)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-fetch_package("github:jedisct1/libsodium#e18eee6" SOURCE_DIR sodium)
+fetch_package("github:jedisct1/libsodium#79a59b7" SOURCE_DIR sodium)
 
 fetch_package("github:holepunchto/librocksdb")
 
