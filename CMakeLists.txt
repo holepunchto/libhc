@@ -290,8 +290,13 @@ install(DIRECTORY include/hc DESTINATION include)
 install(FILES schema/hc_schema.h DESTINATION include)
 
 if(PROJECT_IS_TOP_LEVEL)
+  set(BENCH OFF CACHE BOOL "Build the benchmarks")
+
   enable_testing()
 
-  add_subdirectory(bench)
+  if(BENCH)
+    add_subdirectory(bench)
+  endif()
+
   add_subdirectory(test)
 endif()
